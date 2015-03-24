@@ -19,7 +19,7 @@ def convert_binary(imarray):
                 imarray[n,m] = 1
     return imarray
 
-def sample(imarray,thick_edged,input_image,find_number,img_size=(1024,1024),windowsize=(48,48),n_samples=10):
+def sample(x,y,imarray,thick_edged,input_image,find_number,img_size=(1024,1024),windowsize=(48,48),n_samples=10):
     offset = windowsize[0]/2-1
     temp = imarray[offset:img_size[0]-offset-1,offset:img_size[0]-offset-1]
     
@@ -51,14 +51,14 @@ def sample(imarray,thick_edged,input_image,find_number,img_size=(1024,1024),wind
         y = np.vstack((y,edge_sample))
     return x,y
 
-def define_arrays(directory_input,directory_labels,shape = (48,48),n_samples=10):
+def define_arrays(directory_input,directory_labels,windowsize = (48,48),n_samples=10):
     
     print('... Defining input')
 
     files_input = glob.glob(directory_input+"/*.tif")
     files_labels = glob.glob(directory_labels+"/*.tif")
-    x = np.zeros((0,shape[0]*shape[1]))
-    y = np.zeros((0,shape[0]*shape[1]))
+    x = np.zeros((0,windowsize[0]*windowsize[1]))
+    y = np.zeros((0,windowsize[0]*windowsize[1]))
     
     n = 0
     for n in range(len(files_input)):
@@ -124,15 +124,18 @@ def show_example(adress_real,adress_label):
     exit()
 
 if __name__ == '__main__':
+    
+    n_samples = 10 # Number of samples
+    
     #adress_real = '/Users/hallvardmoiannydal/Documents/Classes/AC297r/Convnet/synapse_train_data/train-input/train-input_0000.tif'
     #adress_label= '/Users/hallvardmoiannydal/Documents/Classes/AC297r/Convnet/synapse_train_data/train-labels/train_labels_cleaned_flipped_0000.tif'
     #show_example(adress_real,adress_label)
     #exit()
 
     # Define directory input and arrays
-    directory_input = '/Users/hallvardmoiannydal/Documents/Classes/AC297r/Convnet/synapse_train_data/train-input/'
-    directory_labels = '/Users/hallvardmoiannydal/Documents/Classes/AC297r/Convnet/synapse_train_data/train-labels/'
-    x,y = define_arrays(directory_input,directory_labels,n_samples = 1000)
+    directory_input = 'train-input'
+    directory_labels = 'train-labels'
+    x,y = define_arrays(directory_input,directory_labels,n_samples = n_samples)
     
     print 'Size dataset: ',x.shape,y.shape
 

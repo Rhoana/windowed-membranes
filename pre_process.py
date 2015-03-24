@@ -18,7 +18,7 @@ class PreProcess(object):
     
         else:
             import os
-            directory = '/Users/hallvardmoiannydal/Documents/Classes/AC297r/Convnet/synapse_train_data'
+            directory = 'synapse_train_data'
             #files = glob.glob(directory+"/*.npy")
             #input_number = len(files)/2
             
@@ -28,7 +28,7 @@ class PreProcess(object):
             y = np.load('y.npy')[:10000]
             os.chdir(owd)
                 
-            lim = 9000
+            lim = 1500
             valid_set_size = 200
             flip_prob = 0.5
             
