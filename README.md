@@ -1,8 +1,10 @@
-# Run Edge Classifier
+# Edge Classifier
+The edge classifer can be run with a small predefined training-set or
+a training set with real and labeled segmented images.
 
 ## Option 1 (easy)
 
-1. Run ConvNet.py with small pre-processed training/test set
+1. Run ConvNet.py with small predefined training/test set
 
 ## Option 2
 
