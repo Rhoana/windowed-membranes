@@ -201,7 +201,7 @@ class ConvNet(Functions):
                                          
 
     def run(self,
-            num_kernels  = [80,80,80],
+            num_kernels  = [10,10,10],
             kernel_sizes = [(5, 5), (3, 3), (3,3)],
             batch_size   = 50,
             epochs       = 100,
