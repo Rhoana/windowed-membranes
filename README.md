@@ -1,7 +1,16 @@
 # Edge Classifier
 Convolutional network that performs edge detection by using segmented labeled training data. 
 
-## Run
+There are two ways to run the code:
+
+## Option 1 (fast)
+1. Run `python edge_prediction --small/medium/large` to generate training/test data, and to predict edges.
+2. Or run `python edge_prediction --small/medium/large` to only perform edge prediction.
+3. The training time is set to 100 epochs. To train for a shorter period, press `Ctrl+C` to throw a KeybordInterrupt and the program will exit the training loop and start the prediction on the test set. 
+4. Run `plot.py`n to plot a visual prediction from the test set, where the integer n is
+   a member of the test set.
+
+## Option 2
 1. Place training data in `synapse_train_data/train_input`
 2. Place training labels in `synapse_train_data/train_labels`
 3. Run `python edge_prediction --pre-process --small/medium/large` to generate training/test data, and to predict edges.
