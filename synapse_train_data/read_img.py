@@ -53,7 +53,7 @@ def sample(x,y,imarray,thick_edged,input_image,find_number,img_size=(1024,1024),
 
 def define_arrays(directory_input,directory_labels,windowsize = (48,48),n_samples=10):
     
-    print('... Defining input')
+    print('Defining input ...')
 
     files_input = glob.glob(directory_input+"/*.tif")
     files_labels = glob.glob(directory_labels+"/*.tif")
@@ -62,7 +62,7 @@ def define_arrays(directory_input,directory_labels,windowsize = (48,48),n_sample
     
     n = 0
     for n in range(len(files_input)):
-        print '... Processing file '+str(n+1)
+        print 'Processing file '+str(n+1) + '... '
         adress_real_img = files_input[n]
         adress = files_labels[n]
         
@@ -79,7 +79,7 @@ def define_arrays(directory_input,directory_labels,windowsize = (48,48),n_sample
         x = np.vstack((x,x_temp))
         y = np.vstack((y,y_temp))
 
-    print '... Done'
+    print 'Done ... '
     
     return x,y
 
@@ -123,8 +123,7 @@ def show_example(adress_real,adress_label):
     plt.show()
     exit()
 
-if __name__ == '__main__':
-    
+def generate_training_set():
     n_samples = 10 # Number of samples
     
     #adress_real = '/Users/hallvardmoiannydal/Documents/Classes/AC297r/Convnet/synapse_train_data/train-input/train-input_0000.tif'
@@ -133,8 +132,8 @@ if __name__ == '__main__':
     #exit()
 
     # Define directory input and arrays
-    directory_input = 'train-input'
-    directory_labels = 'train-labels'
+    directory_input = 'synapse_train_data/train-input'
+    directory_labels = 'synapse_train_data/train-labels'
     x,y = define_arrays(directory_input,directory_labels,n_samples = n_samples)
     
     print 'Size dataset: ',x.shape,y.shape
@@ -142,10 +141,15 @@ if __name__ == '__main__':
     # Save arrays
     np.save('x.npy',x)
     np.save('y.npy',y)
-    
     # Plot example
-    plt.figure(1)
-    plt.imshow(x[0].reshape(48,48),cmap=plt.cm.gray)
-    plt.figure(2)
-    plt.imshow(y[0].reshape(48,48),cmap=plt.cm.gray)
-    plt.show()
+    #plt.figure(1)
+    #plt.imshow(x[0].reshape(48,48),cmap=plt.cm.gray)
+    #plt.figure(2)
+    #plt.imshow(y[0].reshape(48,48),cmap=plt.cm.gray)
+    #plt.show()
+
+if __name__ == '__main__':
+    generate_training_set()
+   
+    
+    

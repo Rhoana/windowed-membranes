@@ -7,15 +7,16 @@ import numpy as np
 import theano
 import theano.tensor as T
 
+
 matplotlib.pyplot.gray()
 theano.config.floatX = 'float32'
 rng = np.random.RandomState(42)
 
-from convolutional_mlp import LeNetConvPoolLayer
-from mlp               import HiddenLayer
-from logistic_sgd      import LogisticRegression
-from pre_process       import PreProcess
-                                    
+from convolutional_mlp  import LeNetConvPoolLayer
+from mlp                import HiddenLayer
+from logistic_sgd       import LogisticRegression
+from pre_process        import PreProcess
+from synapse_train_data.read_img import * 
 
 class Functions(object):
     '''
@@ -213,7 +214,11 @@ class ConvNet(Functions):
         optimizerData['rho']           = 0.9
         optimizerData['epsilon']       = 1e-4
         
-        print '... Loading data'
+        if len(sys.argv) > 1 and sys.argv[1] == "--pre-process":
+            print "Generating Train/Test Set..."
+            generate_training_set()
+
+        print 'Loading data ...'
         
         # load in and process data
         preProcess              = PreProcess()
@@ -222,7 +227,7 @@ class ConvNet(Functions):
         valid_set_x,valid_set_y = data[1],data[4]
         test_set_x,test_set_y   = data[2],data[5]
 
-        print '... Initializing neural network'
+        print 'Initializing neural network ...'
     
         # print error if batch size is to large
         if valid_set_y.eval().size<batch_size:
@@ -294,7 +299,7 @@ class ConvNet(Functions):
                 t2 = time.time()
                 print "Epoch {}    NLL {:.2}    %err in validation set {:.1%}    Time (epoch/total) {:.2}/{:.2} mins".format(epoch + 1, np.mean(costs), np.mean(validation_losses),(t2-t1)/60.,(t2-start_time)/60.)
         except KeyboardInterrupt:
-            print '... Exiting solver'
+            print 'Exiting solver ...'
         #Evaluate performance 
         test_errors = [test_model(i) for i in range(n_test_batches)]
         print "test errors: {:.1%}".format(np.mean(test_errors))

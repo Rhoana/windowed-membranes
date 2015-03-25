@@ -1,0 +1,6 @@
+synapse_train_data/train-input
+synapse_train_data/train-labels
+synapse_train_data/*.npy
+synapse_train_data/*.pyc
+*.npy
+*.pyc
