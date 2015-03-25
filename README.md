@@ -19,7 +19,7 @@ There are two ways to run the code:
 6. Run `plot.py`n to plot a visual prediction from the test set, where the integer n is
    a member of the test set.
 
-Small, medium and large are convolutional network with 10,32 and 64 filters per
+Small, medium and large are convolutional network with 10,64 and 128 filters per
 convolution. The train/test set for the three options are 1500/500, 4000/1000
 and 9000/1000, respectively. In all cases, the validation set is of size 200
 and is a subset of the test set. The number of neurons in the fully connected layer is always the same as the number of outputs in the last convolutional layer.
