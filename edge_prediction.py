@@ -338,6 +338,9 @@ class ConvNet(Functions):
             output = np.vstack((output,predict(i)))
         
         output = output.reshape(output.shape[0],48,48)
+
+        if not os.path.exists('results'):
+            os.makedirs('results')
         
         np.save('results/output.npy',output)
         np.save('results/x.npy',test_set_x.eval())

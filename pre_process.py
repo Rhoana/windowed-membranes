@@ -38,12 +38,12 @@ class PreProcess(object):
                 valid_set_x[n] = test_set_x[rand_val[n]]
                 valid_set_y[n] = test_set_y[rand_val[n]]
 
-        number_flips = np.int(np.floor(train_set_x.shape[1]*flip_prob))
-        rand = np.random.permutation(range(train_set_x.shape[1]))[:number_flips]
-        
-        for n in xrange(rand.size):
-            train_set_x[rand[n]] = train_set_x[rand[n],::-1]
-            train_set_y[rand[n]] = train_set_y[rand[n],::-1]
+        #number_flips = np.int(np.floor(train_set_x.shape[1]*flip_prob))
+        #rand = np.random.permutation(range(train_set_x.shape[1]))[:number_flips]
+        #
+        #for n in xrange(rand.size):
+        #    train_set_x[rand[n]] = train_set_x[rand[n],::-1]
+        #train_set_y[rand[n]] = train_set_y[rand[n],::-1]
             
         # estimate the mean and std dev from the training data
         # then use these estimates to normalize the data
