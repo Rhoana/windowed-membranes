@@ -7,8 +7,11 @@ rng = np.random.RandomState(42)
 
 class PreProcess(object):
     
-    def __init__(self,load_in=False):
+    def __init__(self,train_samples,val_samples,test_samples,load_in=False):
         self.load_in = load_in
+        self.train_samples = train_samples
+        self.val_samples   = val_samples
+        self.test_samples  = test_samples
         
     def run(self):
 
@@ -18,18 +21,11 @@ class PreProcess(object):
     
         else:
             import os
-            directory = 'synapse_train_data'
-            #files = glob.glob(directory+"/*.npy")
-            #input_number = len(files)/2
-            
-            owd = os.getcwd()
-            os.chdir(directory)
-            x = np.load('x.npy')[:10000]
-            y = np.load('y.npy')[:10000]
-            os.chdir(owd)
+            x = np.load('synapse_train_data/x.npy')[:(self.train_samples+self.test_samples)]
+            y = np.load('synapse_train_data/y.npy')[:(self.train_samples+self.test_samples)]
                 
-            lim = 1500
-            valid_set_size = 200
+            lim = self.train_samples
+            valid_set_size = self.val_samples
             flip_prob = 0.5
             
             print 'Size of training/test-set: ',lim,'/',x.shape[0]-lim

@@ -202,26 +202,47 @@ class ConvNet(Functions):
                                          
 
     def run(self,
-            num_kernels  = [10,10,10],
-            kernel_sizes = [(5, 5), (3, 3), (3,3)],
+            net_size = 'small',
             batch_size   = 50,
             epochs       = 100,
             optimizer    = 'RMSprop'):
-            
-            
+        
+
         optimizerData = {}
         optimizerData['learning_rate'] = 0.001
         optimizerData['rho']           = 0.9
         optimizerData['epsilon']       = 1e-4
         
-        if len(sys.argv) > 1 and sys.argv[1] == "--pre-process":
+        if len(sys.argv) > 1 and ( "--pre-process" in sys.argv):
             print "Generating Train/Test Set..."
             generate_training_set()
+
+        if len(sys.argv) > 1 and ( "--small" in sys.argv):
+            num_kernels   = [10,10,10]
+            kernel_sizes  = [(5, 5), (3, 3), (3,3)]
+            train_samples = 1500
+            val_samples   = 200
+            test_samples  = 500
+        elif len(sys.argv) > 1 and ( "--medium" in sys.argv):
+            num_kernels  = [32,32,32]
+            kernel_sizes = [(5, 5), (3, 3), (3,3)]
+            train_samples = 4000
+            val_samples   = 200
+            test_samples  = 1000
+        elif len(sys.argv) > 1 and ( "--large" in sys.argv):
+            num_kernels  = [64,64,64]
+            kernel_sizes = [(5, 5), (3, 3), (3,3)]
+            train_samples = 9000
+            val_samples   = 200
+            test_samples  = 1000
+        else:
+            print 'Error: pass network size (small/large)'
+            exit()
 
         print 'Loading data ...'
         
         # load in and process data
-        preProcess              = PreProcess()
+        preProcess              = PreProcess(train_samples,val_samples,test_samples)
         data                    = preProcess.run()
         train_set_x,train_set_y = data[0],data[3]
         valid_set_x,valid_set_y = data[1],data[4]
@@ -318,36 +339,13 @@ class ConvNet(Functions):
         
         output = output.reshape(output.shape[0],48,48)
         
-        np.save('output.npy',output)
-        np.save('x.py',test_set_x.eval())
-        np.save('y.npy',test_set_y.eval())
-        
-        import matplotlib.pyplot as plt
+        np.save('results/output.npy',output)
+        np.save('results/x.npy',test_set_x.eval())
+        np.save('results/y.npy',test_set_y.eval())
 
-        fig = plt.figure(2)
-        ax1 = fig.add_subplot(132)
-        ax1.imshow(test_set_y.eval()[0].reshape(48,48),cmap=plt.cm.gray)
-        
-        ax2 = fig.add_subplot(133)
-        ax2.imshow(output[0],cmap=plt.cm.gray)
-        
-        ax3 = fig.add_subplot(131)
-        ax3.imshow(test_set_x.eval()[0].reshape(48,48),cmap=plt.cm.gray)
-        
-        ax1.axes.get_xaxis().set_visible(False)
-        ax1.axes.get_yaxis().set_visible(False)
-        ax2.axes.get_xaxis().set_visible(False)
-        ax2.axes.get_yaxis().set_visible(False)
-        ax3.axes.get_xaxis().set_visible(False)
-        ax3.axes.get_yaxis().set_visible(False)
-        
-        
-        ax3.set_title('Input Image')
-        ax2.set_title('Labeled Edges')
-        ax1.set_title('Predicted Edges')
-        
+        from plot import plot
+        plot()
         plt.show()
-        
 
 if __name__ == "__main__":
     convnet = ConvNet()

@@ -4,3 +4,4 @@ synapse_train_data/*.npy
 synapse_train_data/*.pyc
 *.npy
 *.pyc
+.DS_Store

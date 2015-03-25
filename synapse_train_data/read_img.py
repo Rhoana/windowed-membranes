@@ -6,6 +6,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import glob
 import cv2
+import os 
     
 def find_edges(img):
     edged = cv2.Canny(img,1,1) 
@@ -51,7 +52,7 @@ def sample(x,y,imarray,thick_edged,input_image,find_number,img_size=(1024,1024),
         y = np.vstack((y,edge_sample))
     return x,y
 
-def define_arrays(directory_input,directory_labels,windowsize = (48,48),n_samples=10):
+def define_arrays(directory_input,directory_labels,samples_per_image,windowsize = (48,48)):
     
     print('Defining input ...')
 
@@ -73,8 +74,8 @@ def define_arrays(directory_input,directory_labels,windowsize = (48,48),n_sample
         thick_edged = thick_edge(thin_edged)
         
         x_temp,y_temp = np.zeros((0,windowsize[0]*windowsize[1])),np.zeros((0,windowsize[0]*windowsize[1])) 
-        x_temp,y_temp = sample(x_temp,y_temp,thin_edged,thick_edged,img_real,1,n_samples=n_samples)
-        x_temp,y_temp = sample(x_temp,y_temp,thin_edged,thick_edged,img_real,0,n_samples=n_samples)
+        x_temp,y_temp = sample(x_temp,y_temp,thin_edged,thick_edged,img_real,1,n_samples=samples_per_image/2)
+        x_temp,y_temp = sample(x_temp,y_temp,thin_edged,thick_edged,img_real,0,n_samples=samples_per_image/2)
         
         x = np.vstack((x,x_temp))
         y = np.vstack((y,y_temp))
@@ -123,30 +124,18 @@ def show_example(adress_real,adress_label):
     plt.show()
     exit()
 
-def generate_training_set():
-    n_samples = 10 # Number of samples
+def generate_training_set(samples_per_image = 100):
     
-    #adress_real = '/Users/hallvardmoiannydal/Documents/Classes/AC297r/Convnet/synapse_train_data/train-input/train-input_0000.tif'
-    #adress_label= '/Users/hallvardmoiannydal/Documents/Classes/AC297r/Convnet/synapse_train_data/train-labels/train_labels_cleaned_flipped_0000.tif'
-    #show_example(adress_real,adress_label)
-    #exit()
-
     # Define directory input and arrays
     directory_input = 'synapse_train_data/train-input'
     directory_labels = 'synapse_train_data/train-labels'
-    x,y = define_arrays(directory_input,directory_labels,n_samples = n_samples)
+    x,y = define_arrays(directory_input,directory_labels,samples_per_image)
     
     print 'Size dataset: ',x.shape,y.shape
 
     # Save arrays
-    np.save('x.npy',x)
-    np.save('y.npy',y)
-    # Plot example
-    #plt.figure(1)
-    #plt.imshow(x[0].reshape(48,48),cmap=plt.cm.gray)
-    #plt.figure(2)
-    #plt.imshow(y[0].reshape(48,48),cmap=plt.cm.gray)
-    #plt.show()
+    np.save('synapse_train_data/x.npy',x)
+    np.save('synapse_train_data/y.npy',y)
 
 if __name__ == '__main__':
     generate_training_set()
