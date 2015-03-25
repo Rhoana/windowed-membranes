@@ -1,13 +1,12 @@
 # Edge Classifier
 
-1. Place training data in *"synapse_train_data/train_input"*
-2. Place training labels in 'synapse_train_data/train_labels'
-3. Run `python edge_prediction --pre-process --small/medium/large to generate training/test data, and to predict edges
+1. Place training data in `synapse_train_data/train_input`
+2. Place training labels in `synapse_train_data/train_labels`
+3. Run `python edge_prediction --pre-process --small/medium/large` to generate training/test data, and to predict edges
 4. Or run `python edge_prediction --small/medium/large` to only perform edge prediction.
-5. The training time is set to 100 epochs. To train for a shorter period, press
-   Ctrl+C to throw a KeybordInterrupt and the program will exit the training
+5. The training time is set to 100 epochs. To train for a shorter period, press `Ctrl+C` to throw a KeybordInterrupt and the program will exit the training
    loop and start the prediction on the test set. 
-6. Run plot.py n to plot a visual prediction from the test set, where n(int) is
+6. Run `plot.py`n to plot a visual prediction from the test set, where n(int) is
    a member of the test set.
 
 Small, medium and large are convolutional network with 10,32 and 64 filters per
