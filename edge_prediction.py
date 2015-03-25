@@ -224,13 +224,13 @@ class ConvNet(Functions):
             val_samples   = 200
             test_samples  = 500
         elif len(sys.argv) > 1 and ( "--medium" in sys.argv):
-            num_kernels  = [32,32,32]
+            num_kernels  = [64,64,64]
             kernel_sizes = [(5, 5), (3, 3), (3,3)]
             train_samples = 4000
             val_samples   = 200
             test_samples  = 1000
         elif len(sys.argv) > 1 and ( "--large" in sys.argv):
-            num_kernels  = [64,64,64]
+            num_kernels  = [80,80,80]
             kernel_sizes = [(5, 5), (3, 3), (3,3)]
             train_samples = 9000
             val_samples   = 200
