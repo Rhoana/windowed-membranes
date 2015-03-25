@@ -75,11 +75,15 @@ def define_arrays(directory_input,directory_labels,samples_per_image,windowsize 
         
         x_temp,y_temp = np.zeros((0,windowsize[0]*windowsize[1])),np.zeros((0,windowsize[0]*windowsize[1])) 
         x_temp,y_temp = sample(x_temp,y_temp,thin_edged,thick_edged,img_real,1,n_samples=samples_per_image/2)
-        x_temp,y_temp = sample(x_temp,y_temp,thin_edged,thick_edged,img_real,0,n_samples=samples_per_image/2)
         
         x = np.vstack((x,x_temp))
         y = np.vstack((y,y_temp))
 
+        x_temp,y_temp = np.zeros((0,windowsize[0]*windowsize[1])),np.zeros((0,windowsize[0]*windowsize[1])) 
+        x_temp,y_temp = sample(x_temp,y_temp,thin_edged,thick_edged,img_real,0,n_samples=samples_per_image/2)
+
+        x = np.vstack((x,x_temp))
+        y = np.vstack((y,y_temp))
     print 'Done ... '
     
     return x,y
@@ -125,6 +129,8 @@ def show_example(adress_real,adress_label):
     exit()
 
 def generate_training_set(samples_per_image = 100):
+
+    total_samples  = samples_per_image*100
     
     # Define directory input and arrays
     directory_input = 'synapse_train_data/train-input'
@@ -134,8 +140,11 @@ def generate_training_set(samples_per_image = 100):
     print 'Size dataset: ',x.shape,y.shape
 
     # Save arrays
-    np.save('synapse_train_data/x.npy',x)
-    np.save('synapse_train_data/y.npy',y)
+    train_test_ratio = 0.8
+    np.save('synapse_train_data/x_train.npy',x[:int(total_samples*train_test_ratio)])
+    np.save('synapse_train_data/y_train.npy',y[:int(total_samples*train_test_ratio)])
+    np.save('synapse_train_data/x_test.npy',x[int(total_samples*train_test_ratio):])
+    np.save('synapse_train_data/y_test.npy',y[int(total_samples*train_test_ratio):])
 
 if __name__ == '__main__':
     generate_training_set()

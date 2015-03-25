@@ -21,32 +21,16 @@ class PreProcess(object):
     
         else:
             import os
-            x = np.load('synapse_train_data/x.npy')[:(self.train_samples+self.test_samples)]
-            y = np.load('synapse_train_data/y.npy')[:(self.train_samples+self.test_samples)]
+            train_set_x = np.load('synapse_train_data/x_train.npy')[:self.train_samples]
+            train_set_y = np.load('synapse_train_data/y_train.npy')[:self.train_samples]
+            test_set_x  = np.load('synapse_train_data/x_test.npy')[:self.train_samples]
+            test_set_y  = np.load('synapse_train_data/y_test.npy')[:self.train_samples]
                 
-            lim = self.train_samples
             valid_set_size = self.val_samples
             flip_prob = 0.5
             
-            print 'Size of training/test-set: ',lim,'/',x.shape[0]-lim
-            rand = np.random.permutation(range(x.shape[0]))
-            a = rand[:lim]
-            b = rand[lim:]
-            
-            train_set_x = np.zeros((lim,x.shape[1]))
-            train_set_y = np.zeros((lim,x.shape[1]))
-            test_set_x = np.zeros((x.shape[0]-lim,x.shape[1]))
-            test_set_y = np.zeros((x.shape[0]-lim,x.shape[1]))
-
-            for n in xrange(len(a)):
-                train_set_x[n] = x[a[n]]
-                train_set_y[n] = y[a[n]]
-            for n in xrange(len(b)):
-                test_set_x[n] = x[b[n]]
-                test_set_y[n] = y[b[n]]
-            
-            del x,y
-            
+            print 'Size of training/test-set: ',self.train_samples,'/',self.test_samples
+           
             rand_val = np.random.permutation(range(test_set_x.shape[0]))[:valid_set_size]
             valid_set_x = np.zeros((valid_set_size,train_set_x.shape[1]))
             valid_set_y = np.zeros((valid_set_size,train_set_x.shape[1]))
@@ -54,19 +38,13 @@ class PreProcess(object):
                 valid_set_x[n] = test_set_x[rand_val[n]]
                 valid_set_y[n] = test_set_y[rand_val[n]]
 
-        #number_flips = np.int(np.floor(train_set_x.shape[1]*flip_prob))
-        #rand = np.random.permutation(range(train_set_x.shape[1]))[:number_flips]
-        #
-        #for n in xrange(rand.size):
-        #    temp = train_set_x[:,rand[n]]
-        #    shape = int(np.sqrt(temp.shape[1]))
-        #    temp = temp.reshape(3,shape,shape)
-        #    temp = temp[:,::-1,:]
-        #    temp = temp.reshape(3,shape*shape)
-        #    train_set_x[:,rand[n]] = temp
+        number_flips = np.int(np.floor(train_set_x.shape[1]*flip_prob))
+        rand = np.random.permutation(range(train_set_x.shape[1]))[:number_flips]
+        
+        for n in xrange(rand.size):
+            train_set_x[rand[n]] = train_set_x[rand[n],::-1]
+            train_set_y[rand[n]] = train_set_y[rand[n],::-1]
             
-
-
         # estimate the mean and std dev from the training data
         # then use these estimates to normalize the data
         # estimate the mean and std dev from the training data

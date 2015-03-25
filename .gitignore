@@ -1,7 +1,11 @@
-synapse_train_data/train-input
-synapse_train_data/train-labels
-synapse_train_data/*.npy
-synapse_train_data/*.pyc
 *.npy
 *.pyc
 .DS_Store
+synapse_train_data/train-input
+synapse_train_data/train-labels
+synapse_train_data/*.npy
+!synapse_train_data/x_train.npy
+!synapse_train_data/y_train.npy
+!synapse_train_data/x_test.npy
+!synapse_train_data/y_test.npy
+synapse_train_data/*.pyc
