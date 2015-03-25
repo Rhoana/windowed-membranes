@@ -1,5 +1,6 @@
 # Edge Classifier
 
+## Run
 1. Place training data in `synapse_train_data/train_input`
 2. Place training labels in `synapse_train_data/train_labels`
 3. Run `python edge_prediction --pre-process --small/medium/large` to generate training/test data, and to predict edges
