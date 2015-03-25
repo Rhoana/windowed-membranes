@@ -1,4 +1,5 @@
 # Edge Classifier
+Convolutional network that performs edge detection by using segmented labeled training data. 
 
 ## Run
 1. Place training data in `synapse_train_data/train_input`
