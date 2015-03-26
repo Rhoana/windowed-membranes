@@ -11,20 +11,14 @@ import theano.tensor as T
 
 # matplotlib.pyplot.gray()
 
-import os,sys,inspect
-currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
-parentdir = os.path.dirname(currentdir)
-sys.path.insert(0,parentdir) 
-
-### IMPORTING FROM A DIRECTORY ONE LEVEL UP!
 from lib.pool_layer import PoolLayer
 from lib.hidden_layer import HiddenLayer
 from lib.logistic_sgd       import LogisticRegression
 
-from edge_prediction.util.pre_process        import PreProcess
-from edge_prediction.data.read_img import * 
-from edge_prediction.edge_prediction_conv.helper_functions import Functions
-from edge_prediction.edge_prediction_conv.edge_cov_net import Convolution
+from util.pre_process        import PreProcess
+from data.read_img import * 
+from edge_prediction_conv.helper_functions import Functions
+from edge_prediction_conv.edge_cov_net import Convolution
 
 class ConvNet(Functions):
     '''
@@ -80,7 +74,7 @@ class ConvNet(Functions):
         optimizerData['learning_rate'] = 0.001
         optimizerData['rho']           = 0.9
         optimizerData['epsilon']       = 1e-4
-        
+
         if len(sys.argv) > 1 and ( "--pre-process" in sys.argv):
             print "Generating Train/Test Set..."
             generate_training_set()

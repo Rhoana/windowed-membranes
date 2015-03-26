@@ -3,7 +3,7 @@
 ##
 
 import numpy as np
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 import glob
 import cv2
 import os 
@@ -133,8 +133,8 @@ def generate_training_set(samples_per_image = 100):
     total_samples  = samples_per_image*100
     
     # Define directory input and arrays
-    directory_input = 'synapse_train_data/train-input'
-    directory_labels = 'synapse_train_data/train-labels'
+    directory_input = 'data/train-input'
+    directory_labels = 'data/train-labels'
     x,y = define_arrays(directory_input,directory_labels,samples_per_image)
     
     print 'Size dataset: ',x.shape,y.shape
