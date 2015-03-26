@@ -337,14 +337,15 @@ class ConvNet(Functions):
         for i in xrange(n_test_batches):
             output = np.vstack((output,predict(i)))
         
-        output = output.reshape(output.shape[0],48,48)
+        shape = (output.shape[0],48,48)
+        output = output.reshape(shape)
 
         if not os.path.exists('results'):
             os.makedirs('results')
         
         np.save('results/output.npy',output)
-        np.save('results/x.npy',test_set_x.eval())
-        np.save('results/y.npy',test_set_y.eval())
+        np.save('results/x.npy',test_set_x.eval().reshape(shape))
+        np.save('results/y.npy',test_set_y.eval().reshape(shape))
 
         from plot import plot
         plot()
