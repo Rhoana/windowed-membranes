@@ -10,10 +10,10 @@ from theano.tensor.signal import downsample
 from theano.tensor.nnet import conv
 
 from logistic_sgd import LogisticRegression
-from mlp import HiddenLayer
+from hidden_layer import HiddenLayer
 
 
-class LeNetConvPoolLayer(object):
+class PoolLayer(object):
     """
     Layer that performs convolution and maxpooling/subsampling
     """

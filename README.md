@@ -1,7 +1,20 @@
-# Edge Classifier
+# Directory Structure
+
+├── edge_prediction
+│   ├── data
+│   │   ├── train-input
+│   │   └── train-labels
+│   ├── edge_prediction_conv
+│   ├── results
+│   └── util
+├── lib
+└── util
+
+
+# Edge Prediction
 Convolutional network that performs edge detection by using segmented labeled training data. 
 
-There are two ways to run the code:
+There are two ways to run the code from within the edge_prediction directory:
 
 ## Option 1 (fast)
 1. Run `python edge_prediction --small/medium/large` to generate training/test data, and to predict edges.

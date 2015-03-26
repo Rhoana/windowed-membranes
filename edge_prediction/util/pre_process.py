@@ -21,10 +21,10 @@ class PreProcess(object):
     
         else:
             import os
-            train_set_x = np.load('synapse_train_data/x_train.npy')[:self.train_samples]
-            train_set_y = np.load('synapse_train_data/y_train.npy')[:self.train_samples]
-            test_set_x  = np.load('synapse_train_data/x_test.npy')[:self.test_samples]
-            test_set_y  = np.load('synapse_train_data/y_test.npy')[:self.test_samples]
+            train_set_x = np.load('data/x_train.npy')[:self.train_samples]
+            train_set_y = np.load('data/y_train.npy')[:self.train_samples]
+            test_set_x  = np.load('data/x_test.npy')[:self.test_samples]
+            test_set_y  = np.load('data/y_test.npy')[:self.test_samples]
                 
             valid_set_size = self.val_samples
             flip_prob = 0.5

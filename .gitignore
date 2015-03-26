@@ -1,5 +1,6 @@
 *.npy
 *.pyc
+*.tif
 .DS_Store
 synapse_train_data/train-input
 synapse_train_data/train-labels
