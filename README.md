@@ -1,15 +1,37 @@
 # Directory Structure
 
+README.md
 ├── edge_prediction
+│   ├── __init__.py
 │   ├── data
+│   │   ├── __init__.py
+│   │   ├── read_img.py
 │   │   ├── train-input
-│   │   └── train-labels
+│   │   ├── train-labels
+│   │   ├── x_test.npy
+│   │   ├── x_train.npy
+│   │   ├── y_test.npy
+│   │   └── y_train.npy
+│   ├── edge_prediction.py
 │   ├── edge_prediction_conv
+│   │   ├── __init__.py
+│   │   ├── edge_cov_net.py
+│   │   ├── helper_functions.py
+│   ├── plot.py
 │   ├── results
+│   │   ├── output.npy
+│   │   ├── x.npy
+│   │   └── y.npy
 │   └── util
+│       ├── __init__.py
+│       ├── pre_process.py
+        |── functions.py
 ├── lib
+│   ├── __init__.py
+│   ├── hidden_layer.py
+│   ├── logistic_sgd.py
+│   ├── pool_layer.py
 └── util
-
 
 # Edge Prediction
 Convolutional network that performs edge detection by using segmented labeled training data. 
@@ -17,10 +39,9 @@ Convolutional network that performs edge detection by using segmented labeled tr
 There are two ways to run the code from within the edge_prediction directory:
 
 ## Option 1 (fast)
-1. Run `python edge_prediction --small/medium/large` to generate training/test data, and to predict edges.
-2. Or run `python edge_prediction --small/medium/large` to only perform edge prediction.
-3. The training time is set to 100 epochs. To train for a shorter period, press `Ctrl+C` to throw a KeybordInterrupt and the program will exit the training loop and start the prediction on the test set. 
-4. Run `plot.py`n to plot a visual prediction from the test set, where the integer n is
+1 . Run `python edge_prediction --small/medium/large` to only perform edge prediction.
+2. The training time is set to 100 epochs. To train for a shorter period, press `Ctrl+C` to throw a KeybordInterrupt and the program will exit the training loop and start the prediction on the test set. 
+3. Run `plot.py`n to plot a visual prediction from the test set, where the integer n is
    a member of the test set.
 
 ## Option 2

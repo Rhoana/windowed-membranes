@@ -9,7 +9,6 @@ import numpy as np
 import theano
 import theano.tensor as T
 
-
 # matplotlib.pyplot.gray()
 
 import os,sys,inspect
@@ -37,17 +36,6 @@ class ConvNet(Functions):
         self.srng = theano.tensor.shared_randomstreams.RandomStreams(
                             rng.randint(999999))
                             
-    
-    def stack(self,stackitems):
-        '''
-        Works like vstack for theano tensors 
-        '''
-        for n in xrange(len(stackitems)-1):
-            if n == 0:
-                output = T.concatenate((stackitems[n],stackitems[n+1]),axis=1)
-            else:
-                output = T.concatenate((output,stackitems[n+1]),axis=1)
-        return output
                             
     
     def model(self,batch_size,num_kernels,kernel_sizes,x,y):
@@ -116,7 +104,7 @@ class ConvNet(Functions):
             val_samples   = 200
             test_samples  = 1000
         else:
-            print 'Error: pass network size (small/large)'
+            print 'Error: pass network size (small/medium/large)'
             exit()
 
         print 'Loading data ...'
