@@ -2,6 +2,7 @@ import numpy as np
 import theano
 import theano.tensor as T
 from theano import shared, function
+import os
 theano.config.floatX = 'float32'
 rng = np.random.RandomState(42)
 
@@ -20,7 +21,6 @@ class PreProcess(object):
             exit()
     
         else:
-            import os
             train_set_x = np.load('data/x_train.npy')[:self.train_samples]
             train_set_y = np.load('data/y_train.npy')[:self.train_samples]
             test_set_x  = np.load('data/x_test.npy')[:self.test_samples]

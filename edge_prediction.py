@@ -47,7 +47,9 @@ def run(rng=np.random.RandomState(42),
         batch_size   = 50,
         epochs       = 100,
         optimizer    = 'RMSprop',
-        optimizerData = {}
+        optimizerData = {},
+        in_window_shape = (48,48),
+        out_window_shape = (48,48)
         ):
     
     ##### PROCESS COMMAND-LINE ARGS #####
@@ -147,19 +149,21 @@ def run(rng=np.random.RandomState(42),
                                 )
                                 
     # Plot example of output
-    output = np.zeros((0,48*48))
+    output = np.zeros((0,out_window_shape[0]*out_window_shape[1]))
     for i in xrange(n_test_batches):
         output = np.vstack((output,predict(i)))
     
-    shape = (output.shape[0],48,48)
-    output = output.reshape(shape)
+    in_shape = (output.shape[0],in_window_shape[0],in_window_shape[1])
+    out_shape = (output.shape[0],out_window_shape[0],out_window_shape[1])
+
+    output = output.reshape(out_shape)
 
     if not os.path.exists('results'):
         os.makedirs('results')
     
     np.save('results/output.npy',output)
-    np.save('results/x.npy',test_set_x.eval().reshape(shape))
-    np.save('results/y.npy',test_set_y.eval().reshape(shape))
+    np.save('results/x.npy',test_set_x.eval().reshape(in_shape))
+    np.save('results/y.npy',test_set_y.eval().reshape(in_shape))
 
 if __name__ == "__main__":
     

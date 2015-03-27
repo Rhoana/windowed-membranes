@@ -141,10 +141,10 @@ def generate_training_set(samples_per_image = 100):
 
     # Save arrays
     train_test_ratio = 0.8
-    np.save('synapse_train_data/x_train.npy',x[:int(total_samples*train_test_ratio)])
-    np.save('synapse_train_data/y_train.npy',y[:int(total_samples*train_test_ratio)])
-    np.save('synapse_train_data/x_test.npy',x[int(total_samples*train_test_ratio):])
-    np.save('synapse_train_data/y_test.npy',y[int(total_samples*train_test_ratio):])
+    np.save('data/x_train.npy',x[:int(total_samples*train_test_ratio)])
+    np.save('data/y_train.npy',y[:int(total_samples*train_test_ratio)])
+    np.save('data/x_test.npy',x[int(total_samples*train_test_ratio):])
+    np.save('data/y_test.npy',y[int(total_samples*train_test_ratio):])
 
 if __name__ == '__main__':
     generate_training_set()
