@@ -1,9 +1,11 @@
 from helper_functions import Functions
 import theano
-
+from lib.pool_layer                    import PoolLayer
+from lib.hidden_layer                  import HiddenLayer
+from lib.logistic_sgd                  import LogisticRegression
 from lib.pool_layer import PoolLayer
 
-class Convolution(Functions):
+class CovNet(Functions):
     '''
     Class that defines the hierarchy and design of the convolutional
     layers.
@@ -13,6 +15,7 @@ class Convolution(Functions):
         
         self.srng = theano.tensor.shared_randomstreams.RandomStreams(
                             rng.randint(999999))
+
         self.layer0_input_size  = (batch_size, 1, 48, 48)                             # Input size from data 
         self.edge0              = (48 - kernel_sizes[0][0] + 1)/ 2                    # New edge size
         self.layer0_output_size = (batch_size, num_kernels[0], self.edge0, self.edge0)  # Output size
@@ -46,7 +49,7 @@ class Convolution(Functions):
         self.layer2_output_size = (batch_size, num_kernels[2], self.edge2, self.edge2) # Output size
         assert ((self.edge1 - kernel_sizes[2][0] + 1) % 2) == 0                        # Check pooling size
 
-        # Initialize Layer 1
+        # Initialize Layer 2
         self.layer2 = PoolLayer(rng,
                                     input= self.dropout(self.layer1.output,p=0.2),
                                     image_shape=self.layer2_input_size,
@@ -54,3 +57,22 @@ class Convolution(Functions):
                                     filter_shape=(num_kernels[2], num_kernels[1]) + kernel_sizes[2],
                                     poolsize=(2, 2))
 
+        self.layer3_input = self.layer2.output.flatten(2)
+        
+        # Layer 3: Fully connected layer
+        self.layer3 = HiddenLayer(rng,
+                                  input      = self.dropout(self.layer3_input,p=0.2),
+                                  n_in       = num_kernels[2] * self.edge2 * self.edge2,
+                                  n_out      = num_kernels[2] * self.edge2 * self.edge2,
+                                  activation = self.rectify)
+
+
+        # Layer 4: Logistic regression layer
+        self.layer4 = LogisticRegression(input = self.dropout(self.layer3.output,p=0.2),
+                                         n_in  = num_kernels[2] * self.edge2 * self.edge2,
+                                         n_out = 48*48)
+        
+        # Define list of parameters
+        convparams = self.layer2.params + self.layer1.params + self.layer0.params
+        hiddenparams = self.layer4.params + self.layer3.params
+        self.params = convparams + hiddenparams 
