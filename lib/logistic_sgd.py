@@ -11,7 +11,9 @@ class LogisticRegression(object):
     Logistic regression class
     """
 
-    def __init__(self, input, n_in, n_out):
+    def __init__(self, input, n_in, n_out,out_window_shape):
+
+        self.out_window_shape = out_window_shape
 
         # Initialize weights
         self.W = theano.shared(
@@ -38,20 +40,19 @@ class LogisticRegression(object):
         # Define parameters in list
         self.params = [self.W, self.b]
 
-    def negative_log_likelihood(self, y):
+    def negative_log_likelihood(self, y, penatly_factor):
         '''
         Return cost function
         '''
         # Calculate sum of derivatives
-        test = self.p_y_given_x.reshape((self.p_y_given_x.shape[0],48,48))
-        test_dx = (test[:,1:,:] - test[:,:-1,:]).reshape((self.p_y_given_x.shape[0],47*48))
-        test_dy = (test[:,:,1:] - test[:,:,:-1]).reshape((self.p_y_given_x.shape[0],47*48))
+        test = self.p_y_given_x.reshape((self.p_y_given_x.shape[0],self.out_window_shape[0],self.out_window_shape[1]))
+        test_dx = (test[:,1:,:] - test[:,:-1,:]).reshape((self.p_y_given_x.shape[0],(self.out_window_shape[0]-1)*self.out_window_shape[1]))
+        test_dy = (test[:,:,1:] - test[:,:,:-1]).reshape((self.p_y_given_x.shape[0],(self.out_window_shape[0]-1)*self.out_window_shape[1]))
         term = T.sum(T.abs_(test_dx)+T.abs_(test_dy),axis=1)
         
         # Calculate cost function
-        factor = 1
         L = - T.sum( y* T.log(self.p_y_given_x) + (1 - y) * T.log(1 - self.p_y_given_x), axis=1)
-        return T.mean(L+term*factor)
+        return T.mean(L+term*penatly_factor)
 
     def errors(self, y):
         '''
@@ -59,7 +60,7 @@ class LogisticRegression(object):
         '''
         prediction = T.round(self.p_y_given_x)
         L = T.sum(T.abs_(prediction-y),axis=1)
-        return T.mean(L)/(48.*48.)
+        return T.mean(L)/(self.out_window_shape[0]*self.out_window_shape[1])
     
     def prediction(self):
         '''

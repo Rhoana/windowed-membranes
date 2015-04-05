@@ -8,11 +8,11 @@ from util.pre_process                  import PreProcess
 from data.read_img                     import * 
 from edge_prediction_conv.edge_cov_net import CovNet 
 
-def process_cmd_line_args():
+def process_cmd_line_args(in_window_shape,out_window_shape):
     
     if len(sys.argv) > 1 and ( "--pre-process" in sys.argv):
         print "Generating Train/Test Set..."
-        generate_training_set()
+        generate_training_set(in_window_shape,out_window_shape)
         print "Finished Train/Test Set..."
         if ((sys.argv).index("--pre-process") + 1) < len(sys.argv):
             if sys.argv[((sys.argv).index("--pre-process") + 1)] == "only":
@@ -31,7 +31,7 @@ def process_cmd_line_args():
         val_samples   = 200
         test_samples  = 1000
     elif len(sys.argv) > 1 and ( "--large" in sys.argv):
-        num_kernels  = [80,80,80]
+        num_kernels  = [64,64,64]
         kernel_sizes = [(5, 5), (3, 3), (3,3)]
         train_samples = 9000
         val_samples   = 200
@@ -48,12 +48,13 @@ def run(rng=np.random.RandomState(42),
         epochs       = 100,
         optimizer    = 'RMSprop',
         optimizerData = {},
-        in_window_shape = (48,48),
-        out_window_shape = (48,48)
+        in_window_shape = (64,64),
+        out_window_shape = (12,12),
+        penatly_factor = 1.
         ):
     
     ##### PROCESS COMMAND-LINE ARGS #####
-    num_kernels, kernel_sizes, train_samples, val_samples, test_samples = process_cmd_line_args()
+    num_kernels, kernel_sizes, train_samples, val_samples, test_samples = process_cmd_line_args(in_window_shape,out_window_shape)
 
     print 'Loading data ...'
     
@@ -74,6 +75,13 @@ def run(rng=np.random.RandomState(42),
     n_train_batches  = train_set_x.get_value(borrow=True).shape[0]
     n_test_batches   = test_set_x.get_value(borrow=True).shape[0]
     n_valid_batches  = valid_set_x.get_value(borrow=True).shape[0]
+    
+    # adjust batch size
+    while n_test_batches % batch_size != 0:
+            batch_size += 1 
+
+    print 'Batch size: ', batch_size
+
     n_train_batches /= batch_size
     n_test_batches  /= batch_size
     n_valid_batches /= batch_size
@@ -82,13 +90,13 @@ def run(rng=np.random.RandomState(42),
     x = T.matrix('x')  # input image data
     y = T.matrix('y')  # input label data
     
-    cov_net = CovNet(rng, batch_size, num_kernels, kernel_sizes, x, y)
+    cov_net = CovNet(rng, batch_size, num_kernels, kernel_sizes, x, y,in_window_shape,out_window_shape)
 
     # Initialize parameters and functions
-    cost   = cov_net.layer4.negative_log_likelihood(y)        # Cost function
-    params = cov_net.params                                   # List of parameters
-    grads  = T.grad(cost, params)                          # Gradient
-    index  = T.lscalar()                                   # Index
+    cost   = cov_net.layer4.negative_log_likelihood(y,penatly_factor) # Cost function
+    params = cov_net.params                                         # List of parameters
+    grads  = T.grad(cost, params)                                   # Gradient
+    index  = T.lscalar()                                            # Index
     
     # Intialize optimizer
     updates = cov_net.init_optimizer(optimizer, cost, params, optimizerData)
@@ -123,7 +131,6 @@ def run(rng=np.random.RandomState(42),
                           y: test_set_y[index * batch_size: (index + 1) * batch_size]
         }
     )
-
     
     # Solver
     try:
@@ -137,9 +144,25 @@ def run(rng=np.random.RandomState(42),
             print "Epoch {}    NLL {:.2}    %err in validation set {:.1%}    Time (epoch/total) {:.2}/{:.2} mins".format(epoch + 1, np.mean(costs), np.mean(validation_losses),(t2-t1)/60.,(t2-start_time)/60.)
     except KeyboardInterrupt:
         print 'Exiting solver ...'
+    
+    # End timer
+    end_time = time.time()
+    end_epochs = epoch+1
+
     #Evaluate performance 
+    start_test_timer = time.time()
     test_errors = [test_model(i) for i in range(n_test_batches)]
     print "test errors: {:.1%}".format(np.mean(test_errors))
+    stop_test_timer = time.time()
+
+    # Timer information
+    number_train_samples = train_set_x.eval().shape[0]
+    number_test_samples  = test_set_x.eval().shape[0]
+    time_per_train_sample = (end_time-start_time)/float(end_epochs*number_train_samples)
+    time_per_test_sample = (stop_test_timer-start_test_timer)/float(number_test_samples)
+
+    print "Time per train sample: ", time_per_train_sample
+    print "Time per test sample:  ", time_per_test_sample
     
     predict = theano.function(inputs=[index], 
                                 outputs=cov_net.layer4.prediction(),
@@ -160,10 +183,10 @@ def run(rng=np.random.RandomState(42),
 
     if not os.path.exists('results'):
         os.makedirs('results')
-    
+
     np.save('results/output.npy',output)
     np.save('results/x.npy',test_set_x.eval().reshape(in_shape))
-    np.save('results/y.npy',test_set_y.eval().reshape(in_shape))
+    np.save('results/y.npy',test_set_y.eval().reshape(out_shape))
 
 if __name__ == "__main__":
     
