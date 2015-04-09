@@ -18,7 +18,10 @@ class PoolLayer(object):
     Layer that performs convolution and maxpooling/subsampling
     """
 
-    def __init__(self, rng, input, subsample,filter_shape, image_shape, poolsize=(2, 2),maxoutsize = 2):
+    def __init__(self, rng, input, subsample,filter_shape, image_shape, poolsize=(2, 2),maxoutsize = 1):
+
+        print image_shape
+        print filter_shape
         
         assert image_shape[1] == filter_shape[1]
         self.input = input
@@ -27,16 +30,29 @@ class PoolLayer(object):
         fan_in = numpy.prod(filter_shape[1:])
         
         # Output dimension
-        fan_out = ((filter_shape[0]/maxoutsize) * numpy.prod(filter_shape[2:]) /
+        fan_out = ((filter_shape[0])/maxoutsize * numpy.prod(filter_shape[2:]) /
                    numpy.prod(poolsize))
         
-        # Initialize weights 
+        # Initialize weight matrix
+        threshold = 100
         W_bound = numpy.sqrt(6. / (fan_in + fan_out))
+
+        max_cond = numpy.infty
+        n = 1
+        while max_cond > threshold:
+            random_matrix = numpy.random.uniform(low=-W_bound, high=W_bound, size=filter_shape)
+            U, s, V = numpy.linalg.svd(random_matrix, full_matrices=True)
+            
+            max_cond = numpy.max(numpy.max(s,axis=2)/numpy.min(s,axis=2))
+            n += 1
+            if n % 100 == 0:
+                threshold *= 2
+
+        print 'Maximum condition number: ',max_cond,n
+
+        # Initialize weights 
         self.W = theano.shared(
-            numpy.asarray(
-                rng.uniform(low=-W_bound, high=W_bound, size=filter_shape),
-                dtype=theano.config.floatX
-            ),
+            numpy.asarray(random_matrix,dtype=theano.config.floatX),
             borrow=True
         )
 
@@ -53,18 +69,6 @@ class PoolLayer(object):
             image_shape=image_shape
         )
         
-        # Code for implementation of MaxOut - still bugs...
-        # Bias (pixel-wise)
-        #bias_out = conv_out + self.b.dimshuffle('x', 0, 1, 2)
-        
-        # Maxout
-        #maxout_out = None
-        #for i in xrange(maxoutsize):
-        #    t = bias_out[:,i::maxoutsize,:,:]
-        #    if maxout_out is None:
-        #        maxout_out = t
-        #    else:
-        #        maxout_out = T.maximum(maxout_out, t)
         
 
         # Downsampling using maxpooling
@@ -79,7 +83,19 @@ class PoolLayer(object):
             return T.maximum(X,0.)
         
         # Define output 
-        self.output = rectify(pooled_out + self.b.dimshuffle('x', 0, 'x', 'x'))
+        #self.output = rectify(pooled_out + self.b.dimshuffle('x', 0,'x','x'))
+        bias_out = pooled_out + self.b.dimshuffle('x', 0,'x','x')
+        
+        # Maxout
+        maxout_out = None
+        for i in xrange(maxoutsize):
+            t = bias_out[:,i::maxoutsize,:,:]
+            if maxout_out is None:
+                maxout_out = t
+            else:
+                maxout_out = T.maximum(maxout_out, t)
+        
+        self.output = rectify(maxout_out)
 
         # Store parameters
         self.params = [self.W, self.b]

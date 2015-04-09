@@ -7,9 +7,51 @@ import cv2
 import os 
     
 def find_edges(img):
-    edged = cv2.Canny(img,1,1) 
+
+    threshold = 399
+
+    #import matplotlib.pyplot as plt
+    #plt.figure(1)
+    #plt.imshow(img,cmap=plt.cm.gray)
+
+    # Remove synapsis
+    for n in xrange(img.shape[0]):
+        for m in xrange(img.shape[1]):
+            if img[n,m] > threshold:
+                img[n,m] = 0
+                #plt.plot(m,n,'ro')
+
+    #plt.figure(2)
+    #plt.imshow(img,cmap=plt.cm.gray)
+    #plt.show()
+    #exit()
+    edged = cv2.Canny(np.uint8(img),1,1)
     edged = convert_binary(edged)
     return edged
+
+def find_synapse(img,edges = False):
+    threshold = 399
+
+    # Find synapse
+    for n in xrange(img.shape[0]):
+        for m in xrange(img.shape[1]):
+            if img[n,m] > threshold:
+                img[n,m] = 1
+            else:
+                img[n,m] = 0
+
+    if edges == True:
+        img = cv2.Canny(np.uint8(img),1,1)
+        img = convert_binary(img)
+
+        omega = 11
+        blur_img = cv2.GaussianBlur(img.astype(np.float32),(omega,omega),0) 
+
+    else:
+        blur_img = img
+    
+    return img,blur_img
+
 
 def convert_binary(imarray):
     for n in xrange(imarray.shape[0]):
@@ -61,7 +103,7 @@ def sample(x,y,imarray,thick_edged,input_image,find_number,in_window_shape,out_w
         y = np.vstack((y,edge_sample))
     return x,y
 
-def define_arrays(directory_input,directory_labels,samples_per_image,in_window_shape,out_window_shape,n_test_files=1):
+def define_arrays(directory_input,directory_labels,samples_per_image,in_window_shape,out_window_shape,membrane,synapse,n_test_files=5, gaussian_blur = True, on_ratio = 0.2):
     
     print('Defining input ...')
 
@@ -85,22 +127,50 @@ def define_arrays(directory_input,directory_labels,samples_per_image,in_window_s
         
         img_real = cv2.imread(adress_real_img,cv2.IMREAD_UNCHANGED)
         img = cv2.imread(adress,cv2.IMREAD_UNCHANGED)
-        unique = np.unique(img)
-        img_copy = np.uint8(img)
-        thin_edged = find_edges(img_copy)
-        thick_edged = thick_edge(thin_edged)
-        
-        x_temp,y_temp = np.zeros((0,in_window_shape[0]*in_window_shape[1])),np.zeros((0,out_window_shape[0]*out_window_shape[1])) 
-        x_temp,y_temp = sample(x_temp,y_temp,thin_edged,thick_edged,img_real,1,in_window_shape=in_window_shape,out_window_shape=out_window_shape,n_samples=samples_per_image/2)
-        
-        x = np.vstack((x,x_temp))
-        y = np.vstack((y,y_temp))
 
-        x_temp,y_temp = np.zeros((0,in_window_shape[0]*in_window_shape[1])),np.zeros((0,out_window_shape[0]*out_window_shape[1])) 
-        x_temp,y_temp = sample(x_temp,y_temp,thin_edged,thick_edged,img_real,0,in_window_shape=in_window_shape,out_window_shape=out_window_shape,n_samples=samples_per_image/2)
+        if membrane == True:
+            thin_edged = find_edges(img)
 
-        x = np.vstack((x,x_temp))
-        y = np.vstack((y,y_temp))
+            if gaussian_blur != True:
+                thick_edged = thick_edge(thin_edged)
+
+            else:
+                omega = 11
+                thick_edged = cv2.GaussianBlur(thin_edged.astype(np.float32),(omega,omega),0) 
+                #import matplotlib.pyplot as plt
+                #plt.imshow(thick_edged,cmap=plt.cm.gray)
+                #plt.show()
+                #exit()
+            
+            x_temp,y_temp = np.zeros((0,in_window_shape[0]*in_window_shape[1])),np.zeros((0,out_window_shape[0]*out_window_shape[1])) 
+            x_temp,y_temp = sample(x_temp,y_temp,thin_edged,thick_edged,img_real,1,in_window_shape=in_window_shape,out_window_shape=out_window_shape,n_samples=samples_per_image/2)
+            
+            x = np.vstack((x,x_temp))
+            y = np.vstack((y,y_temp))
+
+            x_temp,y_temp = np.zeros((0,in_window_shape[0]*in_window_shape[1])),np.zeros((0,out_window_shape[0]*out_window_shape[1])) 
+            x_temp,y_temp = sample(x_temp,y_temp,thin_edged,thick_edged,img_real,0,in_window_shape=in_window_shape,out_window_shape=out_window_shape,n_samples=samples_per_image/2)
+
+            x = np.vstack((x,x_temp))
+            y = np.vstack((y,y_temp))
+
+        elif synapse == True:
+            on_synapse  = samples_per_image *on_ratio
+            off_synapse = samples_per_image *(1-on_ratio)
+
+            synapsis,blur_synapsis = find_synapse(img)
+
+            x_temp,y_temp = np.zeros((0,in_window_shape[0]*in_window_shape[1])),np.zeros((0,out_window_shape[0]*out_window_shape[1])) 
+            x_temp,y_temp = sample(x_temp,y_temp,synapsis,blur_synapsis,img_real,1,in_window_shape=in_window_shape,out_window_shape=out_window_shape,n_samples=on_synapse)
+            
+            x = np.vstack((x,x_temp))
+            y = np.vstack((y,y_temp))
+
+            x_temp,y_temp = np.zeros((0,in_window_shape[0]*in_window_shape[1])),np.zeros((0,out_window_shape[0]*out_window_shape[1])) 
+            x_temp,y_temp = sample(x_temp,y_temp,synapsis,blur_synapsis,img_real,0,in_window_shape=in_window_shape,out_window_shape=out_window_shape,n_samples=off_synapse)
+
+            x = np.vstack((x,x_temp))
+            y = np.vstack((y,y_temp))
 
     np.save('data/x_train.npy',x)
     np.save('data/y_train.npy',y)
@@ -110,6 +180,8 @@ def define_arrays(directory_input,directory_labels,samples_per_image,in_window_s
     table = np.zeros((0,3))
 
     m = n+1
+
+    import matplotlib.pyplot as plt
    
     for n in range(len(test_files_input)):
         print 'Processing file '+str(n+1+m) + '... '
@@ -118,22 +190,37 @@ def define_arrays(directory_input,directory_labels,samples_per_image,in_window_s
         
         img_real = cv2.imread(adress_real_img,cv2.IMREAD_UNCHANGED)
         img = cv2.imread(adress,cv2.IMREAD_UNCHANGED)
-        img_copy = np.uint8(img)
-        thin_edged = find_edges(img_copy)
-        thick_edged = thick_edge(thin_edged)
 
-        img_samples,labels,table_temp = generate_test_set(thick_edged,img_real,in_window_shape,out_window_shape,n)
+        if membrane == True:
+            thin_edged = find_edges(img)
 
-        x     = np.vstack((x,img_samples))
-        y     = np.vstack((y,labels))
-        table = np.vstack((table,table_temp))
+            if gaussian_blur != True:
+                thick_edged = thick_edge(thin_edged)
+
+            else:
+                omega = 11
+                thick_edged = cv2.GaussianBlur(thin_edged.astype(np.float32),(omega,omega),0) 
+
+            img_samples,labels,table_temp = generate_test_set(thick_edged,img_real,in_window_shape,out_window_shape,n)
+
+            x     = np.vstack((x,img_samples))
+            y     = np.vstack((y,labels))
+            table = np.vstack((table,table_temp))
+
+        elif synapse == True:
+            synapsis,blur_synapsis = find_synapse(img)
+
+            img_samples,labels,table_temp = generate_test_set(blur_synapsis,img_real,in_window_shape,out_window_shape,n)
+
+            x     = np.vstack((x,img_samples))
+            y     = np.vstack((y,labels))
+            table = np.vstack((table,table_temp))
 
     np.save('data/x_test.npy',x)
     np.save('data/y_test.npy',y)
     np.save('data/table.npy',table)
     
     print 'Done ... '
-    
 
 def generate_test_set(thick_edged, img_real, in_window_shape,out_window_shape, img_number,img_shape = (1024,1024)):
     offset = in_window_shape[0]/2
@@ -162,7 +249,6 @@ def generate_test_set(thick_edged, img_real, in_window_shape,out_window_shape, i
 
     return img_samples,labels,table
 
-
 def thick_edge(imarray):
     thickarray = np.zeros(np.shape(imarray))
 
@@ -180,12 +266,12 @@ def thick_edge(imarray):
                 thickarray[n+1,m-1] = 1
     return thickarray
 
-def generate_training_set(in_window_shape,out_window_shape,samples_per_image = 200):
+def generate_training_set(in_window_shape,out_window_shape,samples_per_image = 200,membrane = True, synapse = False):
 
     # Define directory input and arrays
     directory_input = 'data/train-input'
     directory_labels = 'data/train-labels'
-    define_arrays(directory_input,directory_labels,samples_per_image,in_window_shape,out_window_shape)
+    define_arrays(directory_input,directory_labels,samples_per_image,in_window_shape,out_window_shape,membrane,synapse)
     
 if __name__ == '__main__':
     generate_training_set((64,64),(12,12))

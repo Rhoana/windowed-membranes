@@ -4,15 +4,21 @@ import os
 import numpy as np
 import theano
 import theano.tensor as T
+from theano.tensor.shared_randomstreams import RandomStreams
 from util.pre_process                  import PreProcess 
 from data.read_img                     import * 
 from edge_prediction_conv.edge_cov_net import CovNet 
+from edge_prediction_conv.helper_functions import Functions as f 
 
 def process_cmd_line_args(in_window_shape,out_window_shape):
     
     if len(sys.argv) > 1 and ( "--pre-process" in sys.argv):
         print "Generating Train/Test Set..."
-        generate_training_set(in_window_shape,out_window_shape)
+        if '--synapse' in sys.argv:
+            generate_training_set(in_window_shape,out_window_shape,synapse=True,membrane=False)
+        else:
+            generate_training_set(in_window_shape,out_window_shape)
+
         print "Finished Train/Test Set..."
         if ((sys.argv).index("--pre-process") + 1) < len(sys.argv):
             if sys.argv[((sys.argv).index("--pre-process") + 1)] == "only":
@@ -22,19 +28,19 @@ def process_cmd_line_args(in_window_shape,out_window_shape):
         num_kernels   = [10,10,10]
         kernel_sizes  = [(5, 5), (3, 3), (3,3)]
         train_samples = 1500
-        val_samples   = 200
+        val_samples   = 300
         test_samples  = 500
     elif len(sys.argv) > 1 and ( "--medium" in sys.argv):
         num_kernels  = [64,64,64]
         kernel_sizes = [(5, 5), (3, 3), (3,3)]
         train_samples = 4000
-        val_samples   = 200
+        val_samples   = 300
         test_samples  = 1000
     elif len(sys.argv) > 1 and ( "--large" in sys.argv):
         num_kernels  = [64,64,64]
         kernel_sizes = [(5, 5), (3, 3), (3,3)]
         train_samples = 9000
-        val_samples   = 200
+        val_samples   = 300
         test_samples  = 1000
     else:
         print 'Error: pass network size (small/medium/large)'
@@ -44,13 +50,13 @@ def process_cmd_line_args(in_window_shape,out_window_shape):
 
 def run(rng=np.random.RandomState(42),
         net_size = 'small',
-        batch_size   = 50,
+        batch_size   = 30,
         epochs       = 100,
         optimizer    = 'RMSprop',
         optimizerData = {},
         in_window_shape = (64,64),
         out_window_shape = (12,12),
-        penatly_factor = 1.
+        penatly_factor = 0.
         ):
     
     ##### PROCESS COMMAND-LINE ARGS #####
@@ -80,15 +86,13 @@ def run(rng=np.random.RandomState(42),
     while n_test_batches % batch_size != 0:
             batch_size += 1 
 
-    print 'Batch size: ', batch_size
-
     n_train_batches /= batch_size
     n_test_batches  /= batch_size
     n_valid_batches /= batch_size
 
     # symbolic variables
-    x = T.matrix('x')  # input image data
-    y = T.matrix('y')  # input label data
+    x       = T.matrix('x')        # input image data
+    y       = T.matrix('y')        # input label data
     
     cov_net = CovNet(rng, batch_size, num_kernels, kernel_sizes, x, y,in_window_shape,out_window_shape)
 
@@ -101,21 +105,31 @@ def run(rng=np.random.RandomState(42),
     # Intialize optimizer
     updates = cov_net.init_optimizer(optimizer, cost, params, optimizerData)
 
+    # Shuffling of rows for stochastic gradient
+    srng = RandomStreams(seed=234)
+    perm = theano.shared(np.arange(train_set_x.eval().shape[0]))
+    #perm               = theano.shared(np.random.permutation(np.arange(train_set_x.eval().shape[0])))
+    rand = theano.shared(np.arange(train_set_x.eval().shape[0]))
+
+    # acc
+    acc = cov_net.layer4.errors
+    #acc = cov_net.layer4.F1
+
     # Training model
     train_model = theano.function(
                   [index],
                   cost,
                   updates = updates,
                   givens  = {
-                            x: train_set_x[index * batch_size: (index + 1) * batch_size], 
-                            y: train_set_y[index * batch_size: (index + 1) * batch_size] 
+                            x: train_set_x[perm[index * batch_size: (index + 1) * batch_size]], 
+                            y: train_set_y[perm[index * batch_size: (index + 1) * batch_size]]
         }
     )
 
     #Validation function
     validate_model = theano.function(
                      [index],
-                     cov_net.layer4.errors(y),
+                     acc(y),
                      givens = {
                               x: valid_set_x[index * batch_size: (index + 1) * batch_size],
                               y: valid_set_y[index * batch_size: (index + 1) * batch_size]
@@ -125,7 +139,7 @@ def run(rng=np.random.RandomState(42),
     #Test function
     test_model = theano.function(
                  [index],
-                 cov_net.layer4.errors(y),
+                 acc(y),
                  givens = {
                           x: test_set_x[index * batch_size: (index + 1) * batch_size],
                           y: test_set_y[index * batch_size: (index + 1) * batch_size]
@@ -138,6 +152,8 @@ def run(rng=np.random.RandomState(42),
         start_time = time.time()    
         for epoch in range(epochs):
             t1 = time.time()
+            perm              = srng.shuffle_row_elements(perm)
+            train_set_x,train_set_y = f.flip_rotate(train_set_x,train_set_y,in_window_shape,out_window_shape)
             costs             = [train_model(i) for i in xrange(n_train_batches)]
             validation_losses = [validate_model(i) for i in xrange(n_valid_batches)]
             t2 = time.time()
@@ -175,6 +191,11 @@ def run(rng=np.random.RandomState(42),
     output = np.zeros((0,out_window_shape[0]*out_window_shape[1]))
     for i in xrange(n_test_batches):
         output = np.vstack((output,predict(i)))
+
+    from sklearn.metrics import f1_score
+    y      = test_set_y.eval().astype(np.int32)
+    y_pred = np.round(output).astype(np.int32)
+    print 'F1 score: ',f1_score(y.flatten(),y_pred.flatten())
     
     in_shape = (output.shape[0],in_window_shape[0],in_window_shape[1])
     out_shape = (output.shape[0],out_window_shape[0],out_window_shape[1])
@@ -187,6 +208,7 @@ def run(rng=np.random.RandomState(42),
     np.save('results/output.npy',output)
     np.save('results/x.npy',test_set_x.eval().reshape(in_shape))
     np.save('results/y.npy',test_set_y.eval().reshape(out_shape))
+
 
 if __name__ == "__main__":
     

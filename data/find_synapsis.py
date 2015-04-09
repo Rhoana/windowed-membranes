@@ -8,14 +8,16 @@ files_input = glob.glob(directory_input+"/*.tif")
 directory_labels = 'train-labels'
 files_labels = glob.glob(directory_labels+"/*.tif")
 
-img = cv2.imread(files_labels[-1],cv2.IMREAD_UNCHANGED)      
-img_real = cv2.imread(files_input[-1],cv2.IMREAD_UNCHANGED)      
+n = 80
+img = cv2.imread(files_labels[n],cv2.IMREAD_UNCHANGED)      
+img_real = cv2.imread(files_input[n],cv2.IMREAD_UNCHANGED)      
 print np.unique(img)
 
 value1 = 100
 value2 = 300
 
-threshold = 400
+threshold = 399
+print 'threshold = ',threshold
 
 for n in xrange(img.shape[0]):
     for m in xrange(img.shape[1]):

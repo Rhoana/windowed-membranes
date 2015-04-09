@@ -21,6 +21,7 @@ def plot_samples(n=0):
 
     ax3 = fig.add_subplot(132)
     ax3.imshow(y[n,:,:],cmap=plt.cm.gray)
+    print np.unique(y)
 
     ax1.axes.get_xaxis().set_visible(False)
     ax1.axes.get_yaxis().set_visible(False)
@@ -46,6 +47,8 @@ def plot(n=0):
     output = np.load('results/output.npy')
     y     = np.load('results/y.npy')                                              
     table = np.load('data/table.npy') 
+
+    #output = np.round(output/np.max(output))
 
     y = y.reshape(y.shape[0],out_window_shape[0],out_window_shape[1])               
     img = np.zeros((img_shape[0]-diff,img_shape[0]-diff))

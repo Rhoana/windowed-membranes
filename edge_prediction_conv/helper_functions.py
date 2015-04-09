@@ -1,10 +1,48 @@
 import theano
 import theano.tensor as T
+import numpy as np
 
 class Functions(object):
     '''
     Class containing helper functions for the ConvNet class.
     '''
+
+    @staticmethod
+    def flip_rotate(X,Y,in_window_shape,out_window_shape):
+
+        temp_x     = X.eval()
+        temp_y     = Y.eval()
+
+        temp_x     = temp_x.reshape(temp_x.shape[0],in_window_shape[0],in_window_shape[1])
+        temp_y     = temp_y.reshape(temp_y.shape[0],out_window_shape[0],out_window_shape[1])
+        
+        n_temp_x   = temp_x.shape[0]
+        flip1_prob = 0.5
+        flip1_n    = int(np.floor(flip1_prob*n_temp_x))
+        flip2_prob = 0.5
+        flip2_n    = int(np.floor(flip2_prob*n_temp_x))
+        rot_prob   = 0.5
+        rot_n      = int(np.floor(rot_prob*n_temp_x))
+        
+        perm1 = np.random.permutation(range(n_temp_x))[:flip1_n]
+        perm2 = np.random.permutation(range(n_temp_x))[:flip2_n]
+        perm3 = np.random.permutation(range(n_temp_x))[:rot_n]
+
+        for n in xrange(flip1_n):
+            temp_x[perm1[n]] = temp_x[perm1[n],::-1,:]
+            temp_y[perm1[n]] = temp_y[perm1[n],::-1,:]
+
+        for n in xrange(flip2_n):
+            temp_x[perm2[n]] = temp_x[perm2[n],:,::-1]
+            temp_y[perm2[n]] = temp_y[perm2[n],:,::-1]
+
+        for n in xrange(flip2_n):
+            rand = np.random.randint(1,4)
+            temp_x[perm2[n]] = np.rot90(temp_x[perm2[n]],rand)
+            temp_y[perm2[n]] = np.rot90(temp_y[perm2[n]],rand)
+
+        X,Y = theano.shared(temp_x),theano.shared(temp_y)
+        return X,Y
     
     def dropout(self,X,p=0.5):
         '''
@@ -76,3 +114,7 @@ class Functions(object):
                                                  epsilon = optimizerData['epsilon'])
                                                  
         return updates
+
+
+
+

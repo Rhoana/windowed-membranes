@@ -41,11 +41,8 @@ class HiddenLayer(object):
         
         # Calculate output 
         lin_output = T.dot(input, self.W) + self.b
-        self.output = (
-            lin_output if activation is None
-            else activation(lin_output)
-        )
-        
+        self.output = activation(lin_output)
+
         # Add parameters to model
         self.params = [self.W, self.b]
 
