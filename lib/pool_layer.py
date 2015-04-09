@@ -20,9 +20,6 @@ class PoolLayer(object):
 
     def __init__(self, rng, input, subsample,filter_shape, image_shape, poolsize=(2, 2),maxoutsize = 1):
 
-        print image_shape
-        print filter_shape
-        
         assert image_shape[1] == filter_shape[1]
         self.input = input
 

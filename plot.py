@@ -56,6 +56,8 @@ def plot(n=0):
         if table[i,0] == n:       
             img[(table[i,1]*out_window_shape[0]):((table[i,1]+1)*out_window_shape[0]),(table[i,2]*out_window_shape[0]):((table[i,2]+1)*           out_window_shape[0])]= y[i]                                                    
 
+    np.save('results/y_whole.npy',img)
+
     plt.figure(1)
     plt.imshow(img,cmap=plt.cm.gray)
 
@@ -64,6 +66,8 @@ def plot(n=0):
     for i in xrange(table.shape[0]):    
         if table[i,0] == n:       
             img[(table[i,1]*out_window_shape[0]):((table[i,1]+1)*out_window_shape[0]),(table[i,2]*out_window_shape[0]):((table[i,2]+1)*           out_window_shape[0])]= output[i]                                                    
+
+    np.save('results/output_whole.npy',img)
 
     plt.figure(2)
     plt.imshow(img,cmap=plt.cm.gray)

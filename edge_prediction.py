@@ -37,7 +37,7 @@ def process_cmd_line_args(in_window_shape,out_window_shape):
         val_samples   = 300
         test_samples  = 1000
     elif len(sys.argv) > 1 and ( "--large" in sys.argv):
-        num_kernels  = [64,64,64]
+        num_kernels  = [64,64,128]
         kernel_sizes = [(5, 5), (3, 3), (3,3)]
         train_samples = 9000
         val_samples   = 300
@@ -56,7 +56,8 @@ def run(rng=np.random.RandomState(42),
         optimizerData = {},
         in_window_shape = (64,64),
         out_window_shape = (12,12),
-        penatly_factor = 0.
+        penatly_factor = 0.,
+        maxoutsize = (2,2,2)
         ):
     
     ##### PROCESS COMMAND-LINE ARGS #####
@@ -94,7 +95,7 @@ def run(rng=np.random.RandomState(42),
     x       = T.matrix('x')        # input image data
     y       = T.matrix('y')        # input label data
     
-    cov_net = CovNet(rng, batch_size, num_kernels, kernel_sizes, x, y,in_window_shape,out_window_shape)
+    cov_net = CovNet(rng, batch_size, num_kernels, kernel_sizes, x, y,in_window_shape,out_window_shape,maxoutsize = maxoutsize)
 
     # Initialize parameters and functions
     cost   = cov_net.layer4.negative_log_likelihood(y,penatly_factor) # Cost function
