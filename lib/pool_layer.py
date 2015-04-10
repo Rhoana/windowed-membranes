@@ -12,6 +12,8 @@ from theano.tensor.nnet import conv
 from logistic_sgd import LogisticRegression
 from hidden_layer import HiddenLayer
 
+from edge_prediction_conv.helper_functions import Functions as f
+
 
 class PoolLayer(object):
     """
@@ -23,29 +25,8 @@ class PoolLayer(object):
         assert image_shape[1] == filter_shape[1]
         self.input = input
 
-        # Input dimensions
-        fan_in = numpy.prod(filter_shape[1:])
-        
-        # Output dimension
-        fan_out = ((filter_shape[0])/maxoutsize * numpy.prod(filter_shape[2:]) /
-                   numpy.prod(poolsize))
-        
-        # Initialize weight matrix
-        threshold = 100
-        W_bound = numpy.sqrt(6. / (fan_in + fan_out))
-
-        max_cond = numpy.infty
-        n = 1
-        while max_cond > threshold:
-            random_matrix = numpy.random.uniform(low=-W_bound, high=W_bound, size=filter_shape)
-            U, s, V = numpy.linalg.svd(random_matrix, full_matrices=True)
-            
-            max_cond = numpy.max(numpy.max(s,axis=2)/numpy.min(s,axis=2))
-            n += 1
-            if n % 100 == 0:
-                threshold *= 2
-
-        print 'Maximum condition number: ',max_cond,n
+        # Design random matrix
+        random_matrix = f.make_random_matrix(filter_shape, poolsize)
 
         # Initialize weights 
         self.W = theano.shared(
@@ -65,7 +46,6 @@ class PoolLayer(object):
             subsample=subsample,
             image_shape=image_shape
         )
-        
         
 
         # Downsampling using maxpooling

@@ -56,8 +56,8 @@ def run(rng=np.random.RandomState(42),
         optimizerData = {},
         in_window_shape = (64,64),
         out_window_shape = (12,12),
-        penatly_factor = 0.,
-        maxoutsize = (2,2,2)
+        penatly_factor = 1.,
+        maxoutsize = (1,1,1)
         ):
     
     ##### PROCESS COMMAND-LINE ARGS #####

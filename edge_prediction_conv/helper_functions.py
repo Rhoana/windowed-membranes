@@ -43,6 +43,35 @@ class Functions(object):
 
         X,Y = theano.shared(temp_x),theano.shared(temp_y)
         return X,Y
+
+    @staticmethod
+    def make_random_matrix(size,poolsize):
+        threshold = 100
+        
+        fan_in = np.prod(size[1:])                                   
+        fan_out = (size[0] * np.prod(size[2:]) /
+        np.prod(poolsize))                                        
+                                                            
+        # Initialize weight matrix                                              
+        W_bound = np.sqrt(6. / (fan_in + fan_out))    
+
+        max_cond = np.infty                                                  
+        count = 1
+
+        random_matrix = np.zeros(size)
+
+        for n in xrange(size[0]):
+            while max_cond > threshold:                                             
+                temp = np.random.uniform(low=-W_bound, high=W_bound, size=size[1:])
+                U, s, V = np.linalg.svd(temp, full_matrices=True)       
+                                                                    
+                max_cond = np.max(np.max(s,axis=1)/np.min(s,axis=1))       
+                count += 1
+
+            random_matrix[n] = temp
+                                                                    
+        print 'Maximum condition number: ',max_cond, count
+        return random_matrix
     
     def dropout(self,X,p=0.5):
         '''

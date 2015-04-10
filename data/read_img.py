@@ -3,16 +3,12 @@
 
 import numpy as np
 import glob
-import cv2
-import os 
+import os
+from PIL import Image, ImageFilter 
     
 def find_edges(img):
 
     threshold = 399
-
-    #import matplotlib.pyplot as plt
-    #plt.figure(1)
-    #plt.imshow(img,cmap=plt.cm.gray)
 
     # Remove synapsis
     for n in xrange(img.shape[0]):
@@ -21,12 +17,10 @@ def find_edges(img):
                 img[n,m] = 0
                 #plt.plot(m,n,'ro')
 
-    #plt.figure(2)
-    #plt.imshow(img,cmap=plt.cm.gray)
-    #plt.show()
-    #exit()
-    edged = cv2.Canny(np.uint8(img),1,1)
-    edged = convert_binary(edged)
+    temp_img = Image.fromarray(img)
+    temp_img = temp_img.filter(ImageFilter.FIND_EDGES)
+
+    edged = convert_binary(np.array(temp_img))
     return edged
 
 def find_synapse(img,edges = False):
@@ -41,11 +35,15 @@ def find_synapse(img,edges = False):
                 img[n,m] = 0
 
     if edges == True:
-        img = cv2.Canny(np.uint8(img),1,1)
-        img = convert_binary(img)
+        temp_img = Image.fromarray(img)
+        temp_img = temp_img.filter(ImageFilter.FIND_EDGES)
+        img = convert_binary(np.array(temp_img))
 
         omega = 11
-        blur_img = cv2.GaussianBlur(img.astype(np.float32),(omega,omega),0) 
+        filter = ImageFilter.GaussianBlur(omega)
+        temp_img = Image.fromarray(img)
+        temp_img = temp_img.filter(ImageFilter.FIND_EDGES)
+        img = convert_binary(np.array(temp_img))
 
     else:
         blur_img = img
@@ -125,8 +123,8 @@ def define_arrays(directory_input,directory_labels,samples_per_image,in_window_s
         adress_real_img = train_files_input[n]
         adress = train_files_labels[n]
         
-        img_real = cv2.imread(adress_real_img,cv2.IMREAD_UNCHANGED)
-        img = cv2.imread(adress,cv2.IMREAD_UNCHANGED)
+        img_real = np.array(Image.open(adress_real_img).convert("L"))
+        img = np.array(Image.open(adress).convert("L"))
 
         if membrane == True:
             thin_edged = find_edges(img)
@@ -136,11 +134,11 @@ def define_arrays(directory_input,directory_labels,samples_per_image,in_window_s
 
             else:
                 omega = 11
-                thick_edged = cv2.GaussianBlur(thin_edged.astype(np.float32),(omega,omega),0) 
-                #import matplotlib.pyplot as plt
-                #plt.imshow(thick_edged,cmap=plt.cm.gray)
-                #plt.show()
-                #exit()
+                filter = ImageFilter.GaussianBlur(omega)
+                temp_img = Image.fromarray(thin_edged.astype(np.float32))
+                temp_img = temp_img.convert('L')
+                temp_img = temp_img.filter(ImageFilter.FIND_EDGES)
+                thick_edged = convert_binary(np.array(temp_img))
             
             x_temp,y_temp = np.zeros((0,in_window_shape[0]*in_window_shape[1])),np.zeros((0,out_window_shape[0]*out_window_shape[1])) 
             x_temp,y_temp = sample(x_temp,y_temp,thin_edged,thick_edged,img_real,1,in_window_shape=in_window_shape,out_window_shape=out_window_shape,n_samples=samples_per_image/2)
@@ -188,8 +186,8 @@ def define_arrays(directory_input,directory_labels,samples_per_image,in_window_s
         adress_real_img = test_files_input[n]
         adress = test_files_labels[n]
         
-        img_real = cv2.imread(adress_real_img,cv2.IMREAD_UNCHANGED)
-        img = cv2.imread(adress,cv2.IMREAD_UNCHANGED)
+        img_real = np.array(Image.open(adress_real_img).convert("L"))
+        img = np.array(Image.open(adress).convert("L")) 
 
         if membrane == True:
             thin_edged = find_edges(img)
@@ -199,7 +197,11 @@ def define_arrays(directory_input,directory_labels,samples_per_image,in_window_s
 
             else:
                 omega = 11
-                thick_edged = cv2.GaussianBlur(thin_edged.astype(np.float32),(omega,omega),0) 
+                filter = ImageFilter.GaussianBlur(omega)
+                temp_img = Image.fromarray(thin_edged.astype(np.float32))
+                temp_img = temp_img.convert('L')
+                temp_img = temp_img.filter(ImageFilter.FIND_EDGES)
+                thick_edged = convert_binary(np.array(temp_img))
 
             img_samples,labels,table_temp = generate_test_set(thick_edged,img_real,in_window_shape,out_window_shape,n)
 
