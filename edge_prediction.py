@@ -27,18 +27,21 @@ def process_cmd_line_args(in_window_shape,out_window_shape):
     if len(sys.argv) > 1 and ( "--small" in sys.argv):
         num_kernels   = [10,10,10]
         kernel_sizes  = [(5, 5), (3, 3), (3,3)]
+        maxoutsize    = (1,1,1)
         train_samples = 1500
         val_samples   = 300
         test_samples  = 500
     elif len(sys.argv) > 1 and ( "--medium" in sys.argv):
-        num_kernels  = [64,64,64]
-        kernel_sizes = [(5, 5), (3, 3), (3,3)]
+        num_kernels   = [64,64,64]
+        kernel_sizes  = [(5, 5), (3, 3), (3,3)]
+        maxoutsize    = (1,1,1)
         train_samples = 4000
         val_samples   = 300
         test_samples  = 1000
     elif len(sys.argv) > 1 and ( "--large" in sys.argv):
-        num_kernels  = [64,64,128]
-        kernel_sizes = [(5, 5), (3, 3), (3,3)]
+        num_kernels   = [64,64,128]
+        kernel_sizes  = [(5, 5), (3, 3), (3,3)]
+        maxoutsize    = (2,2,4)
         train_samples = 9000
         val_samples   = 300
         test_samples  = 1000
@@ -46,7 +49,7 @@ def process_cmd_line_args(in_window_shape,out_window_shape):
         print 'Error: pass network size (small/medium/large)'
         exit()
 
-    return num_kernels, kernel_sizes, train_samples, val_samples, test_samples
+    return num_kernels, kernel_sizes, maxoutsize, train_samples, val_samples, test_samples
 
 def run(rng=np.random.RandomState(42),
         net_size = 'small',
@@ -61,7 +64,7 @@ def run(rng=np.random.RandomState(42),
         ):
     
     ##### PROCESS COMMAND-LINE ARGS #####
-    num_kernels, kernel_sizes, train_samples, val_samples, test_samples = process_cmd_line_args(in_window_shape,out_window_shape)
+    num_kernels, kernel_sizes, maxoutsize, train_samples, val_samples, test_samples = process_cmd_line_args(in_window_shape,out_window_shape)
 
     print 'Loading data ...'
     

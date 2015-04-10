@@ -4,8 +4,18 @@
 import numpy as np
 import glob
 import os
-from PIL import Image, ImageFilter 
-    
+from scipy import signal
+import scipy
+
+def edge_filter(img):                                                      
+    scharr = np.array([[ -3-3j, 0-10j,  +3 -3j],[-10+0j, 0+ 0j, +10 +0j],[ -3+3j, 0+10j,  +3 +3j]])
+    grad = signal.convolve2d(img, scharr, boundary='symm', mode='same')         
+                                        
+    grad = np.absolute(grad).astype(np.float32)
+    grad = grad/np.max(grad)
+                                            
+    return grad    
+
 def find_edges(img):
 
     threshold = 399
@@ -15,12 +25,10 @@ def find_edges(img):
         for m in xrange(img.shape[1]):
             if img[n,m] > threshold:
                 img[n,m] = 0
-                #plt.plot(m,n,'ro')
 
-    temp_img = Image.fromarray(img)
-    temp_img = temp_img.filter(ImageFilter.FIND_EDGES)
+    img = edge_filter(img)
 
-    edged = convert_binary(np.array(temp_img))
+    edged = convert_binary(img)
     return edged
 
 def find_synapse(img,edges = False):
@@ -35,15 +43,8 @@ def find_synapse(img,edges = False):
                 img[n,m] = 0
 
     if edges == True:
-        temp_img = Image.fromarray(img)
-        temp_img = temp_img.filter(ImageFilter.FIND_EDGES)
-        img = convert_binary(np.array(temp_img))
-
-        omega = 11
-        filter = ImageFilter.GaussianBlur(omega)
-        temp_img = Image.fromarray(img)
-        temp_img = temp_img.filter(ImageFilter.FIND_EDGES)
-        img = convert_binary(np.array(temp_img))
+        print 'Error - implement Gaussian blur for synapse'
+        exit()
 
     else:
         blur_img = img
@@ -133,12 +134,7 @@ def define_arrays(directory_input,directory_labels,samples_per_image,in_window_s
                 thick_edged = thick_edge(thin_edged)
 
             else:
-                omega = 11
-                filter = ImageFilter.GaussianBlur(omega)
-                temp_img = Image.fromarray(thin_edged.astype(np.float32))
-                temp_img = temp_img.convert('L')
-                temp_img = temp_img.filter(ImageFilter.FIND_EDGES)
-                thick_edged = convert_binary(np.array(temp_img))
+                thick_edged = scipy.ndimage.gaussian_filter(thin_edged, sigma=3)
             
             x_temp,y_temp = np.zeros((0,in_window_shape[0]*in_window_shape[1])),np.zeros((0,out_window_shape[0]*out_window_shape[1])) 
             x_temp,y_temp = sample(x_temp,y_temp,thin_edged,thick_edged,img_real,1,in_window_shape=in_window_shape,out_window_shape=out_window_shape,n_samples=samples_per_image/2)
@@ -179,8 +175,6 @@ def define_arrays(directory_input,directory_labels,samples_per_image,in_window_s
 
     m = n+1
 
-    import matplotlib.pyplot as plt
-   
     for n in range(len(test_files_input)):
         print 'Processing file '+str(n+1+m) + '... '
         adress_real_img = test_files_input[n]
@@ -196,13 +190,8 @@ def define_arrays(directory_input,directory_labels,samples_per_image,in_window_s
                 thick_edged = thick_edge(thin_edged)
 
             else:
-                omega = 11
-                filter = ImageFilter.GaussianBlur(omega)
-                temp_img = Image.fromarray(thin_edged.astype(np.float32))
-                temp_img = temp_img.convert('L')
-                temp_img = temp_img.filter(ImageFilter.FIND_EDGES)
-                thick_edged = convert_binary(np.array(temp_img))
-
+                thick_edged = scipy.ndimage.gaussian_filter(thin_edged, sigma=3)
+   
             img_samples,labels,table_temp = generate_test_set(thick_edged,img_real,in_window_shape,out_window_shape,n)
 
             x     = np.vstack((x,img_samples))

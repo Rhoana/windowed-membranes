@@ -57,8 +57,6 @@ class LogisticRegression(object):
         # Calculate cost function
         L = - T.sum( y* T.log(self.p_y_given_x) + (1 - y) * T.log(1 - self.p_y_given_x), axis=1)
         return T.mean(L+term*penatly_factor)
-        #L = - T.sum( y* T.log(self.p_y_given_x) + (1 - y) * T.log(1 - self.p_y_given_x), axis=1)
-        #return T.mean(L)
 
     def errors(self, y):
         '''
