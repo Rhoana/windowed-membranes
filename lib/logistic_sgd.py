@@ -39,7 +39,6 @@ class LogisticRegression(object):
         
         # Apply sigmoid function on output
         self.p_y_given_x = T.nnet.sigmoid(T.dot(input, self.W) + self.b)
-        #self.p_y_given_x = softmax(T.dot(input, self.W) + self.b.dimshuffle('x',0,1))
 
         # Define parameters in list
         self.params = [self.W, self.b]
@@ -62,7 +61,7 @@ class LogisticRegression(object):
         '''
         Output errors
         '''
-        prediction = T.round(self.p_y_given_x)
+        prediction = self.p_y_given_x
         L = T.sum(T.abs_(prediction-y),axis=1)
         return T.mean(L)/(self.out_window_shape[0]*self.out_window_shape[1])
     

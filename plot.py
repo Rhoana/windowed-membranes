@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
 import numpy as np
 import sys
+import util.post_process as post
 
 def plot_samples(n=0):
     x = np.load('results/x.npy')
@@ -38,42 +39,21 @@ def plot_samples(n=0):
 def plot(n=0):
 
     n = int(n)
+    
+    post.post_process()
 
-    img_shape = (1024,1024)                                                         
-    in_window_shape = (64,64)                                                       
-    out_window_shape = (12,12)                                                      
-    diff = in_window_shape[0]-out_window_shape[0]    
+    y      = np.load('results1/y_whole.npy')
+    output = np.load('results1/output_whole.npy')
 
-    output = np.load('results/output.npy')
-    y     = np.load('results/y.npy')                                              
-    table = np.load('data/table.npy') 
-
-    #output = np.round(output/np.max(output))
-
-    y = y.reshape(y.shape[0],out_window_shape[0],out_window_shape[1])               
-    img = np.zeros((img_shape[0]-diff,img_shape[0]-diff))
-    for i in xrange(table.shape[0]):    
-        if table[i,0] == n:       
-            img[(table[i,1]*out_window_shape[0]):((table[i,1]+1)*out_window_shape[0]),(table[i,2]*out_window_shape[0]):((table[i,2]+1)*           out_window_shape[0])]= y[i]                                                    
-
-    np.save('results/y_whole.npy',img)
+    print 'Max/min y-value(bug-check): ',y.max(),y.min()
+    print 'Max/min pred-value(bug-check): ',output.max(),output.min()
 
     plt.figure(1)
-    plt.imshow(img,cmap=plt.cm.gray)
-
-    output = output.reshape(output.shape[0],out_window_shape[0],out_window_shape[1])               
-    img = np.zeros((img_shape[0]-diff,img_shape[0]-diff))
-    for i in xrange(table.shape[0]):    
-        if table[i,0] == n:       
-            img[(table[i,1]*out_window_shape[0]):((table[i,1]+1)*out_window_shape[0]),(table[i,2]*out_window_shape[0]):((table[i,2]+1)*           out_window_shape[0])]= output[i]                                                    
-
-    np.save('results/output_whole.npy',img)
-
+    plt.imshow(y[n],cmap=plt.cm.gray)
     plt.figure(2)
-    plt.imshow(img,cmap=plt.cm.gray)
-
+    plt.imshow(output[n],cmap=plt.cm.gray)
+    
     plt.show()
-
     
 if __name__ == "__main__":
     

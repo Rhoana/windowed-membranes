@@ -10,14 +10,14 @@ from data.read_img                     import *
 from edge_prediction_conv.edge_cov_net import CovNet 
 from edge_prediction_conv.helper_functions import Functions as f 
 
-def process_cmd_line_args(in_window_shape,out_window_shape):
+def process_cmd_line_args(in_window_shape,out_window_shape,stride):
     
     if len(sys.argv) > 1 and ( "--pre-process" in sys.argv):
         print "Generating Train/Test Set..."
         if '--synapse' in sys.argv:
-            generate_training_set(in_window_shape,out_window_shape,synapse=True,membrane=False)
+            generate_data(in_window_shape,out_window_shape,synapse=True,membrane=False)
         else:
-            generate_training_set(in_window_shape,out_window_shape)
+            generate_data(in_window_shape,out_window_shape,stride = stride)
 
         print "Finished Train/Test Set..."
         if ((sys.argv).index("--pre-process") + 1) < len(sys.argv):
@@ -58,13 +58,14 @@ def run(rng=np.random.RandomState(42),
         optimizer    = 'RMSprop',
         optimizerData = {},
         in_window_shape = (64,64),
-        out_window_shape = (12,12),
+        out_window_shape = (48,48),
         penatly_factor = 1.,
-        maxoutsize = (1,1,1)
+        maxoutsize = (1,1,1),
+        stride = 12
         ):
     
     ##### PROCESS COMMAND-LINE ARGS #####
-    num_kernels, kernel_sizes, maxoutsize, train_samples, val_samples, test_samples = process_cmd_line_args(in_window_shape,out_window_shape)
+    num_kernels, kernel_sizes, maxoutsize, train_samples, val_samples, test_samples = process_cmd_line_args(in_window_shape,out_window_shape,stride)
 
     print 'Loading data ...'
     
@@ -88,7 +89,9 @@ def run(rng=np.random.RandomState(42),
     
     # adjust batch size
     while n_test_batches % batch_size != 0:
-            batch_size += 1 
+        batch_size += 1 
+
+    print 'Batch size: ',batch_size
 
     n_train_batches /= batch_size
     n_test_batches  /= batch_size
@@ -161,7 +164,7 @@ def run(rng=np.random.RandomState(42),
             costs             = [train_model(i) for i in xrange(n_train_batches)]
             validation_losses = [validate_model(i) for i in xrange(n_valid_batches)]
             t2 = time.time()
-            print "Epoch {}    NLL {:.2}    %err in validation set {:.1%}    Time (epoch/total) {:.2}/{:.2} mins".format(epoch + 1, np.mean(costs), np.mean(validation_losses),(t2-t1)/60.,(t2-start_time)/60.)
+            print "Epoch {}    NLL {:.5}    err in validation set {:.5}    Time (epoch/total) {:.2}/{:.2} mins".format(epoch + 1, np.mean(costs), np.mean(validation_losses),(t2-t1)/60.,(t2-start_time)/60.)
     except KeyboardInterrupt:
         print 'Exiting solver ...'
     

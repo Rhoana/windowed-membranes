@@ -67,13 +67,13 @@ class CovNet(Functions):
         self.layer3 = HiddenLayer(rng,
                                   input      = self.dropout(self.layer3_input,p=0.2),
                                   n_in       = (num_kernels[2]/maxoutsize[2]) * self.edge2 * self.edge2,
-                                  n_out      = num_kernels[2] * self.edge2 * self.edge2,
+                                  n_out      = (num_kernels[2]/maxoutsize[2]) * self.edge2 * self.edge2,
                                   activation = self.rectify)
 
 
         # Layer 4: Logistic regression layer
         self.layer4 = LogisticRegression(input = self.dropout(self.layer3.output,p=0.2),
-                                         n_in  = num_kernels[2] * self.edge2 * self.edge2,
+                                         n_in  = (num_kernels[2]/maxoutsize[2]) * self.edge2 * self.edge2,
                                          n_out = output_window_shape[0]*output_window_shape[1],
                                          out_window_shape = output_window_shape)
         

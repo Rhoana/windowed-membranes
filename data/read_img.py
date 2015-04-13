@@ -6,6 +6,7 @@ import glob
 import os
 from scipy import signal
 import scipy
+from scipy import misc
 
 def edge_filter(img):                                                      
     scharr = np.array([[ -3-3j, 0-10j,  +3 -3j],[-10+0j, 0+ 0j, +10 +0j],[ -3+3j, 0+10j,  +3 +3j]])
@@ -51,7 +52,6 @@ def find_synapse(img,edges = False):
     
     return img,blur_img
 
-
 def convert_binary(imarray):
     for n in xrange(imarray.shape[0]):
         for m in xrange(imarray.shape[1]):
@@ -59,7 +59,7 @@ def convert_binary(imarray):
                 imarray[n,m] = 1
     return imarray
 
-def sample(x,y,imarray,thick_edged,input_image,find_number,in_window_shape,out_window_shape,img_size=(1024,1024),n_samples=10,random=False):
+def sample(x,y,imarray,thick_edged,input_image,find_number,in_window_shape,out_window_shape,img_size=(1024,1024),n_samples=100,random=False):
     offset = (in_window_shape[0]/2)
     temp = imarray[offset:-(offset),offset:-(offset)]
 
@@ -102,7 +102,7 @@ def sample(x,y,imarray,thick_edged,input_image,find_number,in_window_shape,out_w
         y = np.vstack((y,edge_sample))
     return x,y
 
-def define_arrays(directory_input,directory_labels,samples_per_image,in_window_shape,out_window_shape,membrane,synapse,n_test_files=5, gaussian_blur = True, on_ratio = 0.2):
+def define_arrays(directory_input,directory_labels,samples_per_image,in_window_shape,out_window_shape,membrane,synapse,stride,n_test_files=5, gaussian_blur = True, on_ratio = 0.2, sigma = 3):
     
     print('Defining input ...')
 
@@ -124,17 +124,19 @@ def define_arrays(directory_input,directory_labels,samples_per_image,in_window_s
         adress_real_img = train_files_input[n]
         adress = train_files_labels[n]
         
-        img_real = np.array(Image.open(adress_real_img).convert("L"))
-        img = np.array(Image.open(adress).convert("L"))
+        img_real = misc.imread(adress_real_img)
+        img = misc.imread(adress)
 
         if membrane == True:
             thin_edged = find_edges(img)
+            thin_edged = thin_edged/thin_edged.max()
 
             if gaussian_blur != True:
                 thick_edged = thick_edge(thin_edged)
 
             else:
-                thick_edged = scipy.ndimage.gaussian_filter(thin_edged, sigma=3)
+                thick_edged = scipy.ndimage.gaussian_filter(thin_edged, sigma=sigma)
+                thick_edged = thick_edged/thick_edged.max()
             
             x_temp,y_temp = np.zeros((0,in_window_shape[0]*in_window_shape[1])),np.zeros((0,out_window_shape[0]*out_window_shape[1])) 
             x_temp,y_temp = sample(x_temp,y_temp,thin_edged,thick_edged,img_real,1,in_window_shape=in_window_shape,out_window_shape=out_window_shape,n_samples=samples_per_image/2)
@@ -180,19 +182,21 @@ def define_arrays(directory_input,directory_labels,samples_per_image,in_window_s
         adress_real_img = test_files_input[n]
         adress = test_files_labels[n]
         
-        img_real = np.array(Image.open(adress_real_img).convert("L"))
-        img = np.array(Image.open(adress).convert("L")) 
+        img_real = misc.imread(adress_real_img)
+        img = misc.imread(adress)
 
         if membrane == True:
             thin_edged = find_edges(img)
+            thin_edged = thin_edged/thin_edged.max()
 
             if gaussian_blur != True:
                 thick_edged = thick_edge(thin_edged)
 
             else:
-                thick_edged = scipy.ndimage.gaussian_filter(thin_edged, sigma=3)
+                thick_edged = scipy.ndimage.gaussian_filter(thin_edged, sigma=sigma)
+                thick_edged = thick_edged/thick_edged.max()  
    
-            img_samples,labels,table_temp = generate_test_set(thick_edged,img_real,in_window_shape,out_window_shape,n)
+            img_samples,labels,table_temp = generate_test_set(thick_edged,img_real,in_window_shape,out_window_shape,n,stride)
 
             x     = np.vstack((x,img_samples))
             y     = np.vstack((y,labels))
@@ -201,7 +205,7 @@ def define_arrays(directory_input,directory_labels,samples_per_image,in_window_s
         elif synapse == True:
             synapsis,blur_synapsis = find_synapse(img)
 
-            img_samples,labels,table_temp = generate_test_set(blur_synapsis,img_real,in_window_shape,out_window_shape,n)
+            img_samples,labels,table_temp = generate_test_set(blur_synapsis,img_real,in_window_shape,out_window_shape,n,stride)
 
             x     = np.vstack((x,img_samples))
             y     = np.vstack((y,labels))
@@ -213,29 +217,39 @@ def define_arrays(directory_input,directory_labels,samples_per_image,in_window_s
     
     print 'Done ... '
 
-def generate_test_set(thick_edged, img_real, in_window_shape,out_window_shape, img_number,img_shape = (1024,1024)):
+def generate_test_set(thick_edged, img_real, in_window_shape,out_window_shape, img_number,stride,img_shape = (1024,1024)):
+    
     offset = in_window_shape[0]/2
     diff  = (in_window_shape[0]-out_window_shape[0])
 
     thick_edged = thick_edged[(diff/2):-(diff/2),(diff/2):-(diff/2)]
     
-    number = thick_edged.shape[0]/out_window_shape[0]
+    number = thick_edged.shape[0]/stride - (out_window_shape[0]/stride - 1)
 
     img_samples = np.zeros((number**2,in_window_shape[0]**2))
     labels = np.zeros((number**2,out_window_shape[0]**2))
     table = np.zeros((number**2,3),dtype=np.int32)
 
-    start_point = diff
-
     table_number = 0
-    for n in xrange(number-1):
-        for m in xrange(number-1):
-            img_samples[table_number,:] = img_real[(out_window_shape[0]*n):(out_window_shape[0]*(n+1)+diff),(out_window_shape[0]*m):(out_window_shape[0]*(m+1)+diff)].reshape(1,in_window_shape[0]**2)
-            
-            labels[table_number,:] = thick_edged[(out_window_shape[0]*n):(out_window_shape[0]*(n+1)),(out_window_shape[0]*m):(out_window_shape[0]*(m+1))].reshape(1,out_window_shape[0]**2)
+    for n in xrange(number):
+        for m in xrange(number):
+
+            img_start_y = stride*n
+            img_end_y   = stride*n + in_window_shape[0]
+            img_start_x = stride*m
+            img_end_x   = stride*m + in_window_shape[0]
+
+            label_start_y = stride*n
+            label_end_y   = stride*n + out_window_shape[0]
+            label_start_x = stride*m
+            label_end_x   = stride*m + out_window_shape[0]
+
+            img_samples[table_number,:] = img_real[img_start_y:img_end_y,img_start_x:img_end_x].reshape(1,in_window_shape[0]**2)
+            labels[table_number,:]      = thick_edged[label_start_y:label_end_y, label_start_x:label_end_x].reshape(1,out_window_shape[0]**2)
+
             table[table_number,0] = img_number
-            table[table_number,1] = n
-            table[table_number,2] = m
+            table[table_number,1] = label_start_y
+            table[table_number,2] = label_start_x
             table_number += 1
 
     return img_samples,labels,table
@@ -257,12 +271,12 @@ def thick_edge(imarray):
                 thickarray[n+1,m-1] = 1
     return thickarray
 
-def generate_training_set(in_window_shape,out_window_shape,samples_per_image = 200,membrane = True, synapse = False):
+def generate_data(in_window_shape,out_window_shape,samples_per_image = 1000,membrane = True, synapse = False,stride = 12):
 
     # Define directory input and arrays
     directory_input = 'data/train-input'
     directory_labels = 'data/train-labels'
-    define_arrays(directory_input,directory_labels,samples_per_image,in_window_shape,out_window_shape,membrane,synapse)
+    define_arrays(directory_input,directory_labels,samples_per_image,in_window_shape,out_window_shape,membrane,synapse,stride)
     
 if __name__ == '__main__':
     generate_training_set((64,64),(12,12))
