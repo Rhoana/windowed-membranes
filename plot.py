@@ -42,8 +42,8 @@ def plot(n=0):
     
     post.post_process()
 
-    y      = np.load('results1/y_whole.npy')
-    output = np.load('results1/output_whole.npy')
+    y      = np.load('results/y_whole.npy')
+    output = np.load('results/output_whole.npy')
 
     print 'Max/min y-value(bug-check): ',y.max(),y.min()
     print 'Max/min pred-value(bug-check): ',output.max(),output.min()

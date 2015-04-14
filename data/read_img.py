@@ -102,7 +102,7 @@ def sample(x,y,imarray,thick_edged,input_image,find_number,in_window_shape,out_w
         y = np.vstack((y,edge_sample))
     return x,y
 
-def define_arrays(directory_input,directory_labels,samples_per_image,in_window_shape,out_window_shape,membrane,synapse,stride,n_test_files=5, gaussian_blur = True, on_ratio = 0.2, sigma = 3):
+def define_arrays(directory_input,directory_labels,samples_per_image,in_window_shape,out_window_shape,membrane,synapse,stride,n_test_files=5, gaussian_blur = True, on_ratio = 0.5, sigma = 3):
     
     print('Defining input ...')
 
