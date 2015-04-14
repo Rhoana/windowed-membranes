@@ -10,3 +10,4 @@ synapse_train_data/*.npy
 !synapse_train_data/x_test.npy
 !synapse_train_data/y_test.npy
 synapse_train_data/*.pyc
+.idea

@@ -6,9 +6,12 @@ import glob
 import os
 from scipy import signal
 import scipy
+from scipy import ndimage
+import matplotlib.pyplot as plt
 from scipy import misc
 
-def edge_filter(img):                                                      
+
+def edge_filter(img):
     scharr = np.array([[ -3-3j, 0-10j,  +3 -3j],[-10+0j, 0+ 0j, +10 +0j],[ -3+3j, 0+10j,  +3 +3j]])
     grad = signal.convolve2d(img, scharr, boundary='symm', mode='same')         
                                         
@@ -20,7 +23,6 @@ def edge_filter(img):
 def find_edges(img):
 
     threshold = 399
-
     # Remove synapsis
     for n in xrange(img.shape[0]):
         for m in xrange(img.shape[1]):
@@ -109,7 +111,6 @@ def define_arrays(directory_input,directory_labels,samples_per_image,in_window_s
     files_input = glob.glob(directory_input+"/*.tif")
     files_labels = glob.glob(directory_labels+"/*.tif")
     total_files = len(files_input)
-    
     train_files_input  = files_input[:(total_files-n_test_files)]
     train_files_labels = files_labels[:(total_files-n_test_files)]
     test_files_input  = files_input[(total_files-n_test_files):]
@@ -120,12 +121,12 @@ def define_arrays(directory_input,directory_labels,samples_per_image,in_window_s
     
     n = 0
     for n in range(len(train_files_input)):
-        print 'Processing file '+str(n+1) + '... '
+	print 'Processing file '+str(n+1) + '... '
         adress_real_img = train_files_input[n]
         adress = train_files_labels[n]
         
-        img_real = misc.imread(adress_real_img)
-        img = misc.imread(adress)
+        img_real = plt.imread(adress_real_img)
+        img = plt.imread(adress)
 
         if membrane == True:
             thin_edged = find_edges(img)
@@ -182,8 +183,8 @@ def define_arrays(directory_input,directory_labels,samples_per_image,in_window_s
         adress_real_img = test_files_input[n]
         adress = test_files_labels[n]
         
-        img_real = misc.imread(adress_real_img)
-        img = misc.imread(adress)
+        img_real = plt.imread(adress_real_img)
+        img = plt.imread(adress)
 
         if membrane == True:
             thin_edged = find_edges(img)
