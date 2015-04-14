@@ -1,6 +1,6 @@
 # Directory Structure
 
-
+<pre>
 README.md
 ├── edge_prediction
 │   ├── __init__.py
@@ -33,6 +33,7 @@ README.md
 │   ├── logistic_sgd.py
 │   ├── pool_layer.py
 └── util
+</pre>
 
 # Edge Prediction
 Convolutional network that performs edge detection by using segmented labeled training data. 
