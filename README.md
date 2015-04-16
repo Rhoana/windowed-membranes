@@ -1,6 +1,6 @@
 # Directory Structure
 
-
+<pre>
 README.md
 ├── edge_prediction
 │   ├── __init__.py
@@ -33,6 +33,7 @@ README.md
 │   ├── logistic_sgd.py
 │   ├── pool_layer.py
 └── util
+</pre>
 
 # Edge Prediction
 Convolutional network that performs edge detection by using segmented labeled training data. 
@@ -49,9 +50,12 @@ There are two ways to run the code from within the edge_prediction directory:
 1. Place training data in `synapse_train_data/train_input`
 2. Place training labels in `synapse_train_data/train_labels`
 3. Run `python edge_prediction --pre-process --small/medium/large` to generate training/test data, and to predict edges.
-4. Or run `python edge_prediction --pre-process only` to only generate training data
-5. The training time is set to 100 epochs. To train for a shorter period, press `Ctrl+C` to throw a KeybordInterrupt and the program will exit the training loop and start the prediction on the test set. 
-6. Run `plot.py`n to plot a visual prediction from the test set, where the integer n is
+4. Add the argument 'only' after preprocess to only generate training data (ie: `python edge_prediction --pre-process only`)
+5. Run `python edge_prediction --pre-process synapse to generate training data for synapse
+6. Run `python edge_prediction --pre-process both` to generate training data for both
+7. Run `python edge_prediction --small/medium/large --synapse` to run synapse prediction 
+8. The training time is set to 100 epochs. To train for a shorter period, press `Ctrl+C` to throw a KeybordInterrupt and the program will exit the training loop and start the prediction on the test set. 
+7. Run `plot.py`n to plot a visual prediction from the test set, where the integer n is
    a member of the test set.
 
 Small, medium and large are convolutional network with 10,64 and 100 filters per

@@ -16,7 +16,10 @@ def process_cmd_line_args(in_window_shape,out_window_shape,stride):
         print "Generating Train/Test Set..."
         if '--synapse' in sys.argv:
             generate_data(in_window_shape,out_window_shape,synapse=True,membrane=False)
-        else:
+        elif '--both' in sys.argv:
+            generate_data(in_window_shape,out_window_shape,synapse=True,membrane=False)
+            generate_data(in_window_shape,out_window_shape,stride = stride)
+	else:
             generate_data(in_window_shape,out_window_shape,stride = stride)
 
         print "Finished Train/Test Set..."
