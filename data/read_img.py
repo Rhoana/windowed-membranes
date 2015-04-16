@@ -271,7 +271,7 @@ def thick_edge(imarray):
                 thickarray[n+1,m-1] = 1
     return thickarray
 
-def generate_data(in_window_shape,out_window_shape,samples_per_image = 1000,membrane = True, synapse = False,stride = 12):
+def generate_data(in_window_shape,out_window_shape,samples_per_image = 200,membrane = True, synapse = False,stride = 12):
 
     # Define directory input and arrays
     directory_input = 'data/train-input'

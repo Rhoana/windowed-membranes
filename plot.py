@@ -3,6 +3,7 @@ from matplotlib.patches import Rectangle
 import numpy as np
 import sys
 import util.post_process as post
+from sklearn.metrics import f1_score
 
 def plot_samples(n=0):
     x = np.load('results/x.npy')
@@ -48,10 +49,15 @@ def plot(n=0):
     print 'Max/min y-value(bug-check): ',y.max(),y.min()
     print 'Max/min pred-value(bug-check): ',output.max(),output.min()
 
+    print f1_score(np.round(output.flatten(1)),y.flatten(1))
+
     plt.figure(1)
     plt.imshow(y[n],cmap=plt.cm.gray)
     plt.figure(2)
     plt.imshow(output[n],cmap=plt.cm.gray)
+
+
+
     
     plt.show()
     
