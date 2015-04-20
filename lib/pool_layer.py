@@ -20,23 +20,38 @@ class PoolLayer(object):
     Layer that performs convolution and maxpooling/subsampling
     """
 
-    def __init__(self, rng, input, subsample,filter_shape, image_shape, poolsize=(2, 2),maxoutsize = 1):
+    def __init__(self, rng, input, subsample,filter_shape, image_shape, poolsize=(2, 2),maxoutsize = 1, params = {}, params_number = None):
 
         assert image_shape[1] == filter_shape[1]
         self.input = input
 
-        # Design random matrix
-        random_matrix = f.make_random_matrix(filter_shape, poolsize)
+        W_name = "W" + str(params_number)
+        b_name = "b" + str(params_number)
 
-        # Initialize weights 
-        self.W = theano.shared(
-            numpy.asarray(random_matrix,dtype=theano.config.floatX),
-            borrow=True
-        )
+        if params.has_key(W_name) and params.has_key(b_name):
+            # Initialize weights 
+            self.W = theano.shared(
+                params[W_name],
+                name = W_name,
+                borrow=True
+            )
 
-        # Initialize biases
-        b_values = numpy.zeros((filter_shape[0],), dtype=theano.config.floatX)
-        self.b = theano.shared(value=b_values, borrow=True)
+            # Initialize biases
+            self.b = theano.shared(params[b_name], name = b_name, borrow=True)
+        else:
+            # Design random matrix
+            random_matrix = f.make_random_matrix(filter_shape, poolsize)
+
+            # Initialize weights 
+            self.W = theano.shared(
+                numpy.asarray(random_matrix, dtype=theano.config.floatX),
+                name = W_name,
+                borrow=True
+            )
+
+            # Initialize biases
+            b_values = numpy.zeros((filter_shape[0],), dtype=theano.config.floatX)
+            self.b = theano.shared(value=b_values, name = b_name, borrow=True)
 
         # Convolutional filter
         conv_out = conv.conv2d(

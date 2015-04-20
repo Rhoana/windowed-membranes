@@ -11,7 +11,7 @@ class CovNet(Functions):
     layers.
     '''
     
-    def __init__(self, rng, batch_size,num_kernels,kernel_sizes,x,y,input_window_shape,output_window_shape,maxoutsize = (1,1,1)):
+    def __init__(self, rng, batch_size,num_kernels,kernel_sizes,x,y,input_window_shape,output_window_shape,classifier,maxoutsize = (1,1,1), params = None):
         
         self.srng = theano.tensor.shared_randomstreams.RandomStreams(
                             rng.randint(999999))
@@ -31,7 +31,9 @@ class CovNet(Functions):
                                     subsample= (1,1),
                                     filter_shape=(num_kernels[0], 1) + kernel_sizes[0],
                                     poolsize=(2, 2),
-                                    maxoutsize = maxoutsize[0])
+                                    maxoutsize = maxoutsize[0],
+                                    params = params,
+                                    params_number = 0)
 
         self.layer1_input_size  = self.layer0_output_size                              # Input size Layer 1
         self.edge1              = (self.edge0 - kernel_sizes[1][0] + 1)/ 2            # New edge size
@@ -45,7 +47,9 @@ class CovNet(Functions):
                                     subsample= (1,1),
                                     filter_shape=(num_kernels[1], num_kernels[0]/maxoutsize[0]) + kernel_sizes[1],
                                     poolsize=(2, 2),
-                                    maxoutsize = maxoutsize[1])
+                                    maxoutsize = maxoutsize[1],
+                                    params = params,
+                                    params_number = 1)
                                     
         self.layer2_input_size  = self.layer1_output_size                              # Input size Layer 1
         self.edge2              = (self.edge1 - kernel_sizes[2][0] + 1)/2           # New edge size
@@ -59,7 +63,9 @@ class CovNet(Functions):
                                     subsample= (1,1),
                                     filter_shape=(num_kernels[2], num_kernels[1]/maxoutsize[1]) + kernel_sizes[2],
                                     poolsize=(2, 2),
-                                    maxoutsize = maxoutsize[2])
+                                    maxoutsize = maxoutsize[2],
+                                    params = params,
+                                    params_number = 2)
 
         self.layer3_input = self.layer2.output.flatten(2)
         
@@ -68,14 +74,24 @@ class CovNet(Functions):
                                   input      = self.dropout(self.layer3_input,p=0.2),
                                   n_in       = (num_kernels[2]/maxoutsize[2]) * self.edge2 * self.edge2,
                                   n_out      = (num_kernels[2]/maxoutsize[2]) * self.edge2 * self.edge2,
-                                  activation = self.rectify)
+                                  activation = self.rectify,
+                                  params = params,
+                                  params_number = 3)
 
 
         # Layer 4: Logistic regression layer
+        if classifier == 'synapse_reg':
+            output_classes = 1
+        else:
+            output_classes = output_window_shape[0]**2
+
         self.layer4 = LogisticRegression(input = self.dropout(self.layer3.output,p=0.2),
                                          n_in  = (num_kernels[2]/maxoutsize[2]) * self.edge2 * self.edge2,
-                                         n_out = output_window_shape[0]*output_window_shape[1],
-                                         out_window_shape = output_window_shape)
+                                         n_out = output_classes,
+                                         out_window_shape = output_window_shape,
+                                         params = params,
+                                         params_number = 4,
+                                         classifier = classifier)
         
         # Define list of parameters
         convparams = self.layer2.params + self.layer1.params + self.layer0.params

@@ -7,21 +7,26 @@ theano.config.floatX = 'float32'
 rng = np.random.RandomState(42)
 
 class PreProcess(object):
+
+    def __init__(self,n_val_samples):
+        self.n_val_samples = n_val_samples
     
-    def __init__(self,train_samples,val_samples,test_samples):
-        self.train_samples = train_samples
-        self.val_samples   = val_samples
-        self.test_samples  = test_samples
-        
     def run(self):
 
         # Load training and test set 
-        train_set_x = np.load('data/x_train.npy')#[:self.train_samples]
-        train_set_y = np.load('data/y_train.npy')#[:self.train_samples]
-        test_set_x  = np.load('data/x_test.npy')#[:self.test_samples]
-        test_set_y  = np.load('data/y_test.npy')#[:self.test_samples]
+        train_set_x = np.load('data/x_train.npy')
+        train_set_y = np.load('data/y_train.npy')
+        test_set_x  = np.load('data/x_test.npy')
+        test_set_y  = np.load('data/y_test.npy')
 
-        valid_set_size = self.val_samples
+        print train_set_y.shape
+        print test_set_y.shape
+
+        if train_set_y.ndim != 2 or test_set_y.ndim != 2:
+            train_set_y = train_set_y.reshape(train_set_y.shape[0],1)
+            test_set_y  = test_set_y.reshape(test_set_y.shape[0],1)
+
+        valid_set_size = self.n_val_samples
         
         print 'Size of training/test-set: ',train_set_x.shape[0],'/',test_set_x.shape[0]
         
@@ -34,8 +39,8 @@ class PreProcess(object):
 
         # Flip a number of the training data
         flip_prob = 0.5
-        number_flips = np.int(np.floor(train_set_x.shape[1]*flip_prob))
-        rand = np.random.permutation(range(train_set_x.shape[1]))[:number_flips]
+        number_flips = np.int(np.floor(train_set_x.shape[0]*flip_prob))
+        rand = np.random.permutation(range(train_set_x.shape[0]))[:number_flips]
         
         for n in xrange(rand.size):
             train_set_x[rand[n]] = train_set_x[rand[n],::-1]

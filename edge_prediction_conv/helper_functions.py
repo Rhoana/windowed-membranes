@@ -8,41 +8,83 @@ class Functions(object):
     '''
 
     @staticmethod
-    def flip_rotate(X,Y,in_window_shape,out_window_shape):
+    def flip_rotate(train_set_x,train_set_y,in_window_shape,out_window_shape,perm,index,cost,updates,batch_size,x,y,classifier):
 
-        temp_x     = X.eval()
-        temp_y     = Y.eval()
+        temp_x     = train_set_x.eval()
+        temp_y     = train_set_y.eval()
 
-        temp_x     = temp_x.reshape(temp_x.shape[0],in_window_shape[0],in_window_shape[1])
-        temp_y     = temp_y.reshape(temp_y.shape[0],out_window_shape[0],out_window_shape[1])
-        
-        n_temp_x   = temp_x.shape[0]
-        flip1_prob = 0.5
-        flip1_n    = int(np.floor(flip1_prob*n_temp_x))
-        flip2_prob = 0.5
-        flip2_n    = int(np.floor(flip2_prob*n_temp_x))
-        rot_prob   = 0.5
-        rot_n      = int(np.floor(rot_prob*n_temp_x))
-        
-        perm1 = np.random.permutation(range(n_temp_x))[:flip1_n]
-        perm2 = np.random.permutation(range(n_temp_x))[:flip2_n]
-        perm3 = np.random.permutation(range(n_temp_x))[:rot_n]
+        if classifier in ['membrane','synapse']:
+            temp_x     = temp_x.reshape(temp_x.shape[0],in_window_shape[0],in_window_shape[1])
+            temp_y     = temp_y.reshape(temp_y.shape[0],out_window_shape[0],out_window_shape[1])
+            
+            n_temp_x   = temp_x.shape[0]
+            flip1_prob = 0.5
+            flip1_n    = int(np.floor(flip1_prob*n_temp_x))
+            flip2_prob = 0.5
+            flip2_n    = int(np.floor(flip2_prob*n_temp_x))
+            rot_prob   = 0.5
+            rot_n      = int(np.floor(rot_prob*n_temp_x))
+            
+            perm1 = np.random.permutation(range(n_temp_x))[:flip1_n]
+            perm2 = np.random.permutation(range(n_temp_x))[:flip2_n]
+            perm3 = np.random.permutation(range(n_temp_x))[:rot_n]
 
-        for n in xrange(flip1_n):
-            temp_x[perm1[n]] = temp_x[perm1[n],::-1,:]
-            temp_y[perm1[n]] = temp_y[perm1[n],::-1,:]
+            for n in xrange(flip1_n):
+                temp_x[perm1[n]] = temp_x[perm1[n],::-1,:]
+                temp_y[perm1[n]] = temp_y[perm1[n],::-1,:]
 
-        for n in xrange(flip2_n):
-            temp_x[perm2[n]] = temp_x[perm2[n],:,::-1]
-            temp_y[perm2[n]] = temp_y[perm2[n],:,::-1]
+            for n in xrange(flip2_n):
+                temp_x[perm2[n]] = temp_x[perm2[n],:,::-1]
+                temp_y[perm2[n]] = temp_y[perm2[n],:,::-1]
 
-        for n in xrange(flip2_n):
-            rand = np.random.randint(1,4)
-            temp_x[perm2[n]] = np.rot90(temp_x[perm2[n]],rand)
-            temp_y[perm2[n]] = np.rot90(temp_y[perm2[n]],rand)
+            for n in xrange(flip2_n):
+                rand = np.random.randint(1,4)
+                temp_x[perm2[n]] = np.rot90(temp_x[perm2[n]],rand)
+                temp_y[perm2[n]] = np.rot90(temp_y[perm2[n]],rand)
 
-        X,Y = theano.shared(temp_x),theano.shared(temp_y)
-        return X,Y
+            temp_x = temp_x.reshape(temp_x.shape[0],temp_x.shape[1]**2)
+            temp_y = temp_y.reshape(temp_y.shape[0],temp_y.shape[1]**2)
+
+        elif classifier == 'synapse_reg':
+            temp_x     = temp_x.reshape(temp_x.shape[0],in_window_shape[0],in_window_shape[1])
+            temp_y     = temp_y.reshape(temp_y.shape[0],1)
+            
+            n_temp_x   = temp_x.shape[0]
+            flip1_prob = 0.5
+            flip1_n    = int(np.floor(flip1_prob*n_temp_x))
+            flip2_prob = 0.5
+            flip2_n    = int(np.floor(flip2_prob*n_temp_x))
+            rot_prob   = 0.5
+            rot_n      = int(np.floor(rot_prob*n_temp_x))
+            
+            perm1 = np.random.permutation(range(n_temp_x))[:flip1_n]
+            perm2 = np.random.permutation(range(n_temp_x))[:flip2_n]
+            perm3 = np.random.permutation(range(n_temp_x))[:rot_n]
+
+            for n in xrange(flip1_n):
+                temp_x[perm1[n]] = temp_x[perm1[n],::-1,:]
+
+            for n in xrange(flip2_n):
+                temp_x[perm2[n]] = temp_x[perm2[n],:,::-1]
+
+            for n in xrange(flip2_n):
+                rand = np.random.randint(1,4)
+                temp_x[perm2[n]] = np.rot90(temp_x[perm2[n]],rand)
+
+            temp_x = temp_x.reshape(temp_x.shape[0],temp_x.shape[1]**2)
+
+        train_set_x,train_set_y = theano.shared(temp_x),theano.shared(temp_y)
+
+        train_model = theano.function(                                          
+                       [index],                                                    
+                        cost,                                                       
+                        updates = updates,                                          
+                        givens  = {                                                 
+                                    x: train_set_x[perm[index * batch_size: (index + 1) * batch_size]], 
+                                    y: train_set_y[perm[index * batch_size: (index + 1) * batch_size]]
+            }                                                                   
+        )  
+        return train_set_x,train_set_y,train_model
 
     @staticmethod
     def make_random_matrix(size,poolsize):
