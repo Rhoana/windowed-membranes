@@ -68,13 +68,13 @@ class ConvNetClassifier(object):
         batch_size       = 30
         epochs           = 100
         in_window_shape  = (64,64)
-        out_window_shape = (48,48)
+        out_window_shape = (12,12)
         penatly_factor   = 0.,
         maxoutsize       = (1,1,1)
         stride           = 12
 
         # Image data
-        samples_per_image    = 2000
+        samples_per_image    = 400
         n_validation_samples = 2000
         on_ratio             = 0.5
         img_size             = (1024,1024)
@@ -158,6 +158,17 @@ class ConvNetClassifier(object):
         # acc
         acc = cov_net.layer4.errors
         #acc = cov_net.layer4.F1
+        
+        # Train model   
+        train_model = theano.function(                                          
+                       [index],                                                    
+                        cost,                                                       
+                        updates = updates,                                          
+                        givens  = {                                                 
+                                    x: train_set_x[perm[index * batch_size: (index + 1) * batch_size]], 
+                                    y: train_set_y[perm[index * batch_size: (index + 1) * batch_size]]
+            }                                                                   
+        )
 
         #Validation function
         validate_model = theano.function(
@@ -191,7 +202,7 @@ class ConvNetClassifier(object):
             for epoch in range(epochs):
                 t1 = time.time()
                 perm              = srng.shuffle_row_elements(perm)
-                train_set_x,train_set_y,train_model = f.flip_rotate(train_set_x,train_set_y,in_window_shape,out_window_shape,perm,index,cost,updates,batch_size,x,y,classifier)
+                train_set_x,train_set_y = f.flip_rotate(train_set_x,train_set_y,in_window_shape,out_window_shape,perm,index,cost,updates,batch_size,x,y,classifier)
                 costs             = [train_model(i) for i in xrange(n_train_batches)]
                 validation_losses = [validate_model(i) for i in xrange(n_valid_batches)]
                 t2 = time.time()
@@ -214,8 +225,8 @@ class ConvNetClassifier(object):
         end_epochs = epoch+1
 
         # Timer information
-        number_train_samples = train_set_x.eval().shape[0]
-        number_test_samples  = test_set_x.eval().shape[0]
+        number_train_samples = train_set_x.get_value(borrow=True).shape[0]
+        number_test_samples  = test_set_x.get_value(borrow=True).shape[0]
         
         predict = theano.function(inputs=[index], 
                                     outputs=cov_net.layer4.prediction(),
@@ -263,7 +274,7 @@ class ConvNetClassifier(object):
         results[2] = np.array(time_results)
 
         table = np.load('data/table.npy')
-        output, y = post.post_process(train_set_x.eval(),train_set_y.eval(),output,test_set_y.eval(),table,img_size,in_window_shape,out_window_shape,classifier)
+        output, y = post.post_process(train_set_x.get_value(borrow=True),train_set_y.get_value(borrow=True),output,test_set_y.get_value(borrow=True),table,img_size,in_window_shape,out_window_shape,classifier)
 
         mean_abs_error = np.mean(np.abs(output-y))
         f1 = f1_score(y.flatten().astype(np.int32),np.round(output).flatten().astype(np.int32))
@@ -275,7 +286,7 @@ class ConvNetClassifier(object):
 
         np.save('results/results.npy',results)
         np.save('results/output.npy',output)
-        np.save('results/x.npy',test_set_x.eval().reshape(in_shape))
+        np.save('results/x.npy',test_set_x.get_value(borrow=True).reshape(in_shape))
         np.save('results/y.npy',y)
 
 class Engine(object):
