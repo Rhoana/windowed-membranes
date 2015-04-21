@@ -113,6 +113,14 @@ class ConvNetClassifier(object):
         valid_set_x,valid_set_y = data[1],data[4]
         test_set_x,test_set_y   = data[2],data[5]
 
+        train_set_x = theano.shared(train_set_x,borrow=True)
+        valid_set_x = theano.shared(valid_set_x,borrow=True)
+        test_set_x = theano.shared(test_set_x,borrow=True)
+
+        train_set_y = theano.shared(train_set_y,borrow=True)
+        valid_set_y = theano.shared(valid_set_y,borrow=True)
+        test_set_y = theano.shared(test_set_y,borrow=True)
+
         print 'Initializing neural network ...'
 
         # print error if batch size is to large
@@ -120,10 +128,10 @@ class ConvNetClassifier(object):
             print 'Error: Batch size is larger than size of validation set.'
 
         # compute batch sizes for train/test/validation
-        n_train_batches  = train_set_x.get_value(borrow=True).shape[0]
-        n_test_batches   = test_set_x.get_value(borrow=True).shape[0]
-        n_valid_batches  = valid_set_x.get_value(borrow=True).shape[0]
-        
+        n_train_batches  = train_set_x.eval().shape[0]
+        n_test_batches   = test_set_x.eval().shape[0]
+        n_valid_batches  = valid_set_x.eval().shape[0]
+
         # adjust batch size
         while n_test_batches % batch_size != 0:
             batch_size += 1 
@@ -191,7 +199,7 @@ class ConvNetClassifier(object):
             for epoch in range(epochs):
                 t1 = time.time()
                 perm              = srng.shuffle_row_elements(perm)
-                train_set_x,train_set_y,train_model = f.flip_rotate(train_set_x,train_set_y,in_window_shape,out_window_shape,perm,index,cost,updates,batch_size,x,y,classifier)
+                train_set_x,train_set_y,train_model = f.flip_rotate(train_set_x,train_set_y,in_window_shape,out_window_shape,perm,index,cost,updates,batch_size,x,y,classifier, GPU=False)
                 costs             = [train_model(i) for i in xrange(n_train_batches)]
                 validation_losses = [validate_model(i) for i in xrange(n_valid_batches)]
                 t2 = time.time()
@@ -345,11 +353,3 @@ class Engine(object):
 
 if __name__ == "__main__":
     engine = Engine()
-
-    
-    
-    
-    
-    
-    
-

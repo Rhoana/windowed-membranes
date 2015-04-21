@@ -68,14 +68,6 @@ class PreProcess(object):
         train_set_y = train_set_y.astype(np.float32)
         test_set_y = test_set_y.astype(np.float32)
         valid_set_y = valid_set_y.astype(np.float32)
-
-        train_set_x = theano.shared(train_set_x,borrow=True)
-        valid_set_x = theano.shared(valid_set_x,borrow=True)
-        test_set_x = theano.shared(test_set_x,borrow=True)
-
-        train_set_y = theano.shared(train_set_y,borrow=True)
-        valid_set_y = theano.shared(valid_set_y,borrow=True)
-        test_set_y = theano.shared(test_set_y,borrow=True)
         
         list_it = [train_set_x,valid_set_x,test_set_x,train_set_y,valid_set_y,test_set_y]
         

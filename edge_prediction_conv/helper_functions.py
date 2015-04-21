@@ -8,10 +8,14 @@ class Functions(object):
     '''
 
     @staticmethod
-    def flip_rotate(train_set_x,train_set_y,in_window_shape,out_window_shape,perm,index,cost,updates,batch_size,x,y,classifier):
-
-        temp_x     = train_set_x.eval()
-        temp_y     = train_set_y.eval()
+    def flip_rotate(train_set_x,train_set_y,in_window_shape,out_window_shape,perm,index,cost,updates,batch_size,x,y,classifier, GPU):
+        GPU_SIZE = 200
+        if GPU:
+            temp_x     = train_set_x
+            temp_y     = train_set_y
+        else:
+            temp_x     = train_set_x.eval()
+            temp_y     = train_set_y.eval()
 
         if classifier in ['membrane','synapse']:
             temp_x     = temp_x.reshape(temp_x.shape[0],in_window_shape[0],in_window_shape[1])
@@ -73,16 +77,20 @@ class Functions(object):
 
             temp_x = temp_x.reshape(temp_x.shape[0],temp_x.shape[1]**2)
 
-        train_set_x,train_set_y = theano.shared(temp_x),theano.shared(temp_y)
+        if GPU:
+            temp_x = temp_x[:GPU_SIZE]
+            temp_y = temp_y[:GPU_SIZE]
 
-        train_model = theano.function(                                          
+        train_set_x,train_set_y = theano.shared(temp_x, borrow=True),theano.shared(temp_y, borrow=True)
+
+        train_model = theano.function(
                        [index],                                                    
                         cost,                                                       
                         updates = updates,                                          
                         givens  = {                                                 
                                     x: train_set_x[perm[index * batch_size: (index + 1) * batch_size]], 
                                     y: train_set_y[perm[index * batch_size: (index + 1) * batch_size]]
-            }                                                                   
+            }
         )  
         return train_set_x,train_set_y,train_model
 
