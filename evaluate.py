@@ -12,7 +12,7 @@ def save_random_images(actual_pixel_labels, predicted_pixel_labels, num_images=3
 	if not os.path.exists("results/samples"):
 		os.makedirs("results/samples")
 	
-	for idx in indices:
+	for i, idx in enumerate(indices):
 	    #f, (ax1, ax2) = plt.subplots(1, 2, sharey=True)
 	    #f.set_size_inches(17, 5)
 	    #ax1.imshow(np.around(actual_pixel_labels[idx]), cmap='bone',  interpolation='nearest')
@@ -22,8 +22,8 @@ def save_random_images(actual_pixel_labels, predicted_pixel_labels, num_images=3
 	    #ax1.set_axis_off()
 	    #ax2.set_axis_off()
 	    #f.savefig("results/samples/comparison_" + str(idx) + ".png")
-	    misc.imsave('results/samples/predicted ' + str(idx) + '.png', np.around(predicted_pixel_labels[idx]))
-	    misc.imsave('results/samples/actual ' + str(idx) + '.png', np.around(actual_pixel_labels[idx]))
+	    misc.imsave('results/samples/predicted_' + str(i) + '.png', np.around(predicted_pixel_labels[idx]))
+	    misc.imsave('results/samples/actual_' + str(i) + '.png', np.around(actual_pixel_labels[idx]))
 	return True
 
 def output_stats(actual_pixel_labels, predicted_pixel_labels):
