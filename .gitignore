@@ -11,3 +11,6 @@ synapse_train_data/*.npy
 !synapse_train_data/y_test.npy
 synapse_train_data/*.pyc
 .idea
+results/*
+.ipynb_checkpoints/*
+misc/.ipynb_checkpoints/*

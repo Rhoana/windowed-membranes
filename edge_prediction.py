@@ -171,6 +171,14 @@ class ConvNetClassifier(object):
         valid_set_x,valid_set_y = data[1],data[4]
         test_set_x,test_set_y   = data[2],data[5]
 
+        train_set_x = theano.shared(train_set_x,borrow=True)
+        valid_set_x = theano.shared(valid_set_x,borrow=True)
+        test_set_x = theano.shared(test_set_x,borrow=True)
+
+        train_set_y = theano.shared(train_set_y,borrow=True)
+        valid_set_y = theano.shared(valid_set_y,borrow=True)
+        test_set_y = theano.shared(test_set_y,borrow=True)
+
         print 'Initializing neural network ...'
 
         # print error if batch size is to large
@@ -178,10 +186,10 @@ class ConvNetClassifier(object):
             print 'Error: Batch size is larger than size of validation set.'
 
         # compute batch sizes for train/test/validation
-        n_train_batches  = train_set_x.get_value(borrow=True).shape[0]
-        n_test_batches   = test_set_x.get_value(borrow=True).shape[0]
-        n_valid_batches  = valid_set_x.get_value(borrow=True).shape[0]
-        
+        n_train_batches  = train_set_x.eval().shape[0]
+        n_test_batches   = test_set_x.eval().shape[0]
+        n_valid_batches  = valid_set_x.eval().shape[0]
+
         # adjust batch size
         while n_test_batches % batch_size != 0:
             batch_size += 1 
@@ -353,6 +361,7 @@ class ConvNetClassifier(object):
 
 
 if __name__ == "__main__":
+<<<<<<< HEAD
     classifier = ConvNetClassifier()
     classifier.run()
 
@@ -363,3 +372,6 @@ if __name__ == "__main__":
     
     
 
+=======
+    engine = Engine()
+>>>>>>> 37bee2c093c1e51de477b4bfe17b8cc6ae44b7b6
