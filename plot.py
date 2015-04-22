@@ -41,6 +41,9 @@ def plot(n=0):
     y      = np.load('results/y.npy')
     output = np.load('results/output.npy')
 
+    print y.shape
+    print output.shape
+
     print 'Max/min y-value(bug-check): ',y.max(),y.min()
     print 'Max/min pred-value(bug-check): ',output.max(),output.min()
 

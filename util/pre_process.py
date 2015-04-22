@@ -19,12 +19,15 @@ class PreProcess(object):
         test_set_x  = np.load('data/x_test.npy')
         test_set_y  = np.load('data/y_test.npy')
 
-        print train_set_y.shape
-        print test_set_y.shape
 
         if train_set_y.ndim != 2 or test_set_y.ndim != 2:
             train_set_y = train_set_y.reshape(train_set_y.shape[0],1)
             test_set_y  = test_set_y.reshape(test_set_y.shape[0],1)
+
+        print train_set_x.shape
+        print test_set_x.shape
+        print train_set_y.shape
+        print test_set_y.shape
 
         valid_set_size = self.n_val_samples
         
@@ -68,6 +71,14 @@ class PreProcess(object):
         train_set_y = train_set_y.astype(np.float32)
         test_set_y = test_set_y.astype(np.float32)
         valid_set_y = valid_set_y.astype(np.float32)
+
+        train_set_x = theano.tensor._shared(train_set_x,borrow=True)
+        valid_set_x = theano.tensor._shared(valid_set_x,borrow=True)
+        test_set_x  = theano.tensor._shared(test_set_x,borrow=True)
+
+        train_set_y = theano.tensor._shared(train_set_y,borrow=True)
+        valid_set_y = theano.tensor._shared(valid_set_y,borrow=True)
+        test_set_y  = theano.tensor._shared(test_set_y,borrow=True)
         
         list_it = [train_set_x,valid_set_x,test_set_x,train_set_y,valid_set_y,test_set_y]
         
