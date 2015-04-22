@@ -17,6 +17,19 @@ class ConvNetClassifier(object):
     def __init__(self,params = {}):
         self.params = params
 
+    # --------------------------------------------------------------------------
+    def load_params(self, path):
+        f = file(path, 'r')
+        obj = cPickle.load(f)
+        f.close()
+        return obj
+
+    # --------------------------------------------------------------------------
+    def save_params(self, obj, path):
+        f = file(path, 'wb')
+        cPickle.dump(obj, f, protocol=cPickle.HIGHEST_PROTOCOL)
+        f.close()
+
     def process_cmd_line_args(self,in_window_shape,out_window_shape,stride,img_size, classifier, n_train_files, n_test_files, samples_per_image, on_ratio, membrane_edges):
         
         if len(sys.argv) > 1 and ( "--small" in sys.argv):
@@ -48,6 +61,51 @@ class ConvNetClassifier(object):
         elif classifier in ['synapse','synapse_reg']:
             directory_input      = ['data/train-input','data/AC3-input']
             directory_labels     = ['data/train-labels','data/AC3-labels']
+
+        # path to store parameters        
+        if not os.path.exists('parameters'):
+            os.makedirs('parameters')
+
+        path = 'parameters/params.dat'
+        self.path = path
+        
+        if "--load-weights_all" in sys.argv: 
+            if os.path.isfile(path) == True:
+                params = self.load_params(path)
+                self.params = params
+            else:
+                self.params = None
+            print 'Warning: Unable to load weights'
+        elif "--load-weights_1" in sys.argv: 
+            load_n_layers = 1
+            params = self.load_params(path)
+            for n in xrange(load_n_layers,total_n_layers):
+                del params["W"+str(n)]
+                del params["b"+str(n)]
+            self.params = params
+        elif "--load-weights_2" in sys.argv: 
+            load_n_layers = 2
+            params = self.load_params(path)
+            for n in xrange(load_n_layers,total_n_layers):
+                del params["W"+str(n)]
+                del params["b"+str(n)]
+            self.params = params
+        elif "--load-weights_3" in sys.argv: 
+            load_n_layers = 3
+            params = self.load_params(path)
+            for n in xrange(load_n_layers,total_n_layers):
+                del params["W"+str(n)]
+                del params["b"+str(n)]
+            self.params = params
+        elif "--load-weights_4" in sys.argv: 
+            load_n_layers = 4
+            params = self.load_params(path)
+            for n in xrange(load_n_layers,total_n_layers):
+                del params["W"+str(n)]
+                del params["b"+str(n)]
+
+            self.params = params
+
 
         if "--pre-process" in sys.argv:
             print "Generating Train/Test Set..."
@@ -215,6 +273,9 @@ class ConvNetClassifier(object):
                 val_results.append(epoch_val)
                 time_results.append(epoch_time)
 
+                # store parameters
+                self.save_params(self.get_params(), self.path)
+
                 print "Epoch {}    Training Cost: {:.5}   Validation Error: {:.5}    Time (epoch/total): {:.2} mins".format(epoch + 1, epoch_cost, epoch_val, epoch_time)
         except KeyboardInterrupt:
             print 'Exiting solver ...'
@@ -289,79 +350,10 @@ class ConvNetClassifier(object):
         np.save('results/x.npy',test_set_x.get_value(borrow=True).reshape(in_shape))
         np.save('results/y.npy',y)
 
-class Engine(object):
-
-    # --------------------------------------------------------------------------
-    def __init__(self, total_n_layers = 5):
-
-        # path to store parameters        
-        if not os.path.exists('parameters'):
-            os.makedirs('parameters')
-
-        path = 'parameters/params.dat'
-        
-        if "--load-weights_all" in sys.argv: 
-	    if os.path.isfile(path) == True:
-                params = self.load_params(path)
-	        classifier = ConvNetClassifier(params=params)
-	    else:
-		classifier = ConvNetClassifier()
-		print 'Warning: Unable to load weights'
-        elif "--load-weights_1" in sys.argv: 
-            load_n_layers = 1
-            params = self.load_params(path)
-            for n in xrange(load_n_layers,total_n_layers):
-                del params["W"+str(n)]
-                del params["b"+str(n)]
-            classifier = ConvNetClassifier(params=params)
-        elif "--load-weights_2" in sys.argv: 
-            load_n_layers = 2
-            params = self.load_params(path)
-            for n in xrange(load_n_layers,total_n_layers):
-                del params["W"+str(n)]
-                del params["b"+str(n)]
-            classifier = ConvNetClassifier(params=params)
-        elif "--load-weights_3" in sys.argv: 
-            load_n_layers = 3
-            params = self.load_params(path)
-            for n in xrange(load_n_layers,total_n_layers):
-                del params["W"+str(n)]
-                del params["b"+str(n)]
-            classifier = ConvNetClassifier(params=params)
-        elif "--load-weights_4" in sys.argv: 
-            load_n_layers = 4
-            params = self.load_params(path)
-            for n in xrange(load_n_layers,total_n_layers):
-                del params["W"+str(n)]
-                del params["b"+str(n)]
-
-            classifier = ConvNetClassifier(params=params)
-        else:
-            classifier = ConvNetClassifier()
-
-        classifier.run()
-
-        # store parameters
-        self.save_params(classifier.get_params(), path)
-
-    # --------------------------------------------------------------------------
-    def load_params(self, path):
-        f = file(path, 'r')
-        obj = cPickle.load(f)
-        f.close()
-        return obj
-
-    # --------------------------------------------------------------------------
-    def save_params(self, obj, path):
-        f = file(path, 'wb')
-        cPickle.dump(obj, f, protocol=cPickle.HIGHEST_PROTOCOL)
-        f.close()
-
-
 if __name__ == "__main__":
     
-    #for n in xrange(5):
-    engine = Engine()
+    classifier = ConvNetClassifier()
+    classifier.run()
 
     
     
