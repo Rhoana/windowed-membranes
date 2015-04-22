@@ -4,6 +4,21 @@ from scipy import misc
 import matplotlib.pyplot as plt
 import os
 import seaborn as sns
+from skimage.restoration import denoise_bilateral
+
+def threshold_array(array, threshold):
+    y_threshold = np.copy(array)
+    y_threshold[np.where( array > threshold )] = 1
+    y_threshold[np.where( array <= threshold )] = 0
+    return y_threshold
+
+def get_best_threshold_by_f1(y_actual, y_pred):
+    f1s = np.empty((1000))
+    thresholds = np.linspace(0.01, 1, 1000)
+    for i, threshold in enumerate(thresholds):
+        y_thresh = threshold_array(y_pred, threshold)
+        f1s[i] = f1_score(y_actual, y_thresh, labels=[0, 1], average='binary')
+    return thresholds[np.argmax(f1s)]
 
 def save_random_images(actual_pixel_labels, predicted_pixel_labels, num_images=3):
 	indices = np.random.choice(actual_pixel_labels.shape[0], num_images, replace=False) 
@@ -27,25 +42,30 @@ def save_random_images(actual_pixel_labels, predicted_pixel_labels, num_images=3
 	return True
 
 def output_stats(actual_pixel_labels, predicted_pixel_labels):
-	y_actual = np.around(actual_pixel_labels.flatten())
-	y_predicted = np.around(predicted_pixel_labels.flatten())
+	y_actual = np.around(actual_pixel_labels.flatten())    
+	p_thresh = get_best_threshold_by_f1(y_actual, predicted_pixel_labels.flatten())
+	y_predicted = threshold_array(predicted_pixel_labels.flatten(), p_thresh)
+
 	f1 = f1_score(y_actual, y_predicted, labels=[0, 1], average='binary')
 	jaccard = jaccard_similarity_score(y_actual, y_predicted)
 	auc = roc_auc_score(y_actual, y_predicted)
 	report = classification_report(y_actual, y_predicted, target_names=["non-synapses", "synapses"])
 	confusion_mat = confusion_matrix(y_actual, y_predicted)
-	output_str =  "F1 score is " + str(f1)
+
+	output_str  = "Probability threshold is " + str(p_thresh)
+	actual = np.around(actual_pixel_labels.flatten())    
+	output_str +=  "F1 score is " + str(f1) 
 	output_str += "\nJaccard similarity score is " + str(jaccard)
 	output_str += "\nROC AUC score is " + str(auc)
 	output_str += "\nFull Classification Report:\n " + str(report)
+
 	print output_str
 	with open("results/output_stats.txt", "w") as text_file:
 	    text_file.write(output_str)
-	return True
 
 def save_roc_curve(actual_pixel_labels, predicted_pixel_labels):
-	y_actual = np.around(actual_pixel_labels.flatten())
-	y_predicted = np.around(predicted_pixel_labels.flatten())
+	y_actual = actual_pixel_labels.flatten()
+	y_predicted = predicted_pixel_labels.flatten()
 	auc = roc_auc_score(y_actual, y_predicted)
 	fpr, tpr, thresholds = roc_curve(y_actual, y_predicted)
 	plt.figure(figsize=(12, 7))
@@ -61,7 +81,10 @@ def save_roc_curve(actual_pixel_labels, predicted_pixel_labels):
 	plt.show()
 	return True
 
+BILATERAL_FILTERING = True
 actual_pixel_labels, predicted_pixel_labels = np.load("results/y.npy"), np.load("results/output.npy") 
+if BILATERAL_FILTERING:
+	predicted_pixel_labels = np.array([denoise_bilateral(im) for im in predicted_pixel_labels])
 save_random_images(actual_pixel_labels, predicted_pixel_labels, 3)
 output_stats(actual_pixel_labels, predicted_pixel_labels)
 #save_roc_curve(actual_pixel_labels, predicted_pixel_labels)
