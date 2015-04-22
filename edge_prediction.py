@@ -54,6 +54,47 @@ class ConvNetClassifier(object):
             read = Read(in_window_shape, out_window_shape, stride, img_size, classifier, n_train_files, n_test_files, samples_per_image, on_ratio, directory_input, directory_labels, membrane_edges)
             read.generate_data()
 
+        # path to store parameters        
+        if not os.path.exists('parameters'):
+            os.makedirs('parameters')
+
+        path = 'parameters/params.dat'
+        self.path = path
+        
+        if "--load-weights_all" in sys.argv: 
+            params = self.load_params(path)
+            classifier = ConvNetClassifier(params=params)
+        elif "--load-weights_1" in sys.argv: 
+            load_n_layers = 1
+            params = self.load_params(path)
+            for n in xrange(load_n_layers,total_n_layers):
+                del params["W"+str(n)]
+                del params["b"+str(n)]
+            self.params = params
+        elif "--load-weights_2" in sys.argv: 
+            load_n_layers = 2
+            params = self.load_params(path)
+            for n in xrange(load_n_layers,total_n_layers):
+                del params["W"+str(n)]
+                del params["b"+str(n)]
+            self.params = params
+        elif "--load-weights_3" in sys.argv: 
+            load_n_layers = 3
+            params = self.load_params(path)
+            for n in xrange(load_n_layers,total_n_layers):
+                del params["W"+str(n)]
+                del params["b"+str(n)]
+            self.params = params
+        elif "--load-weights_4" in sys.argv: 
+            load_n_layers = 4
+            params = self.load_params(path)
+            for n in xrange(load_n_layers,total_n_layers):
+                del params["W"+str(n)]
+                del params["b"+str(n)]
+
+            self.params = params
+
+
         return num_kernels, kernel_sizes, maxoutsize, classifier
 
     def get_params(self):
@@ -61,6 +102,19 @@ class ConvNetClassifier(object):
         for param in self.params:
             params[param.name] = param.get_value()
         return params
+
+    # --------------------------------------------------------------------------
+    def load_params(self, path):
+        f = file(path, 'r')
+        obj = cPickle.load(f)
+        f.close()
+        return obj
+
+    # --------------------------------------------------------------------------
+    def save_params(self, obj, path):
+        f = file(path, 'wb')
+        cPickle.dump(obj, f, protocol=cPickle.HIGHEST_PROTOCOL)
+        f.close()
 
     def run(self):
 
@@ -92,6 +146,10 @@ class ConvNetClassifier(object):
         # Classifier: membrane/synapses
         classifier     = 'membrane'
         membrane_edges = 'WideEdges' #GaussianBlur/WideEdges 
+
+        # Folders
+        input_folder  = 'data1'
+        output_folder = 'run1'
 
         # GLOBAL CONFIG
         theano.config.floatX = 'float32'
@@ -215,6 +273,10 @@ class ConvNetClassifier(object):
                 val_results.append(epoch_val)
                 time_results.append(epoch_time)
 
+
+                # store parameters
+                self.save_params(self.get_params(), self.path)
+
                 print "Epoch {}    Training Cost: {:.5}   Validation Error: {:.5}    Time (epoch/total): {:.2} mins".format(epoch + 1, epoch_cost, epoch_val, epoch_time)
         except KeyboardInterrupt:
             print 'Exiting solver ...'
@@ -289,73 +351,10 @@ class ConvNetClassifier(object):
         np.save('results/x.npy',test_set_x.get_value(borrow=True).reshape(in_shape))
         np.save('results/y.npy',y)
 
-class Engine(object):
-
-    # --------------------------------------------------------------------------
-    def __init__(self, total_n_layers = 5):
-
-        # path to store parameters        
-        if not os.path.exists('parameters'):
-            os.makedirs('parameters')
-
-        path = 'parameters/params.dat'
-        
-        if "--load-weights_all" in sys.argv: 
-            params = self.load_params(path)
-            classifier = ConvNetClassifier(params=params)
-        elif "--load-weights_1" in sys.argv: 
-            load_n_layers = 1
-            params = self.load_params(path)
-            for n in xrange(load_n_layers,total_n_layers):
-                del params["W"+str(n)]
-                del params["b"+str(n)]
-            classifier = ConvNetClassifier(params=params)
-        elif "--load-weights_2" in sys.argv: 
-            load_n_layers = 2
-            params = self.load_params(path)
-            for n in xrange(load_n_layers,total_n_layers):
-                del params["W"+str(n)]
-                del params["b"+str(n)]
-            classifier = ConvNetClassifier(params=params)
-        elif "--load-weights_3" in sys.argv: 
-            load_n_layers = 3
-            params = self.load_params(path)
-            for n in xrange(load_n_layers,total_n_layers):
-                del params["W"+str(n)]
-                del params["b"+str(n)]
-            classifier = ConvNetClassifier(params=params)
-        elif "--load-weights_4" in sys.argv: 
-            load_n_layers = 4
-            params = self.load_params(path)
-            for n in xrange(load_n_layers,total_n_layers):
-                del params["W"+str(n)]
-                del params["b"+str(n)]
-
-            classifier = ConvNetClassifier(params=params)
-        else:
-            classifier = ConvNetClassifier()
-
-        classifier.run()
-
-        # store parameters
-        self.save_params(classifier.get_params(), path)
-
-    # --------------------------------------------------------------------------
-    def load_params(self, path):
-        f = file(path, 'r')
-        obj = cPickle.load(f)
-        f.close()
-        return obj
-
-    # --------------------------------------------------------------------------
-    def save_params(self, obj, path):
-        f = file(path, 'wb')
-        cPickle.dump(obj, f, protocol=cPickle.HIGHEST_PROTOCOL)
-        f.close()
-
 
 if __name__ == "__main__":
-    engine = Engine()
+    classifier = ConvNetClassifier()
+    classifier.run()
 
     
     
