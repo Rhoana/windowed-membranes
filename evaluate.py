@@ -17,7 +17,7 @@ def get_best_threshold_by_f1(y_actual, y_pred):
     thresholds = np.linspace(0.01, 1, 1000)
     for i, threshold in enumerate(thresholds):
         y_thresh = threshold_array(y_pred, threshold)
-        f1s[i] = f1_score(y_actual, y_thresh, labels=[0, 1], average='binary')
+        f1s[i] = f1_score(y_actual, y_thresh, labels=[0, 1])
     return thresholds[np.argmax(f1s)]
 
 def save_random_images(actual_pixel_labels, predicted_pixel_labels, num_images=3):
@@ -46,7 +46,7 @@ def output_stats(actual_pixel_labels, predicted_pixel_labels):
 	p_thresh = get_best_threshold_by_f1(y_actual, predicted_pixel_labels.flatten())
 	y_predicted = threshold_array(predicted_pixel_labels.flatten(), p_thresh)
 
-	f1 = f1_score(y_actual, y_predicted, labels=[0, 1], average='binary')
+	f1 = f1_score(y_actual, y_predicted, labels=[0, 1])
 	jaccard = jaccard_similarity_score(y_actual, y_predicted)
 	auc = roc_auc_score(y_actual, y_predicted)
 	report = classification_report(y_actual, y_predicted, target_names=["non-synapses", "synapses"])
@@ -82,7 +82,7 @@ def save_roc_curve(actual_pixel_labels, predicted_pixel_labels):
 	return True
 
 BILATERAL_FILTERING = True
-actual_pixel_labels, predicted_pixel_labels = np.load("results/y.npy"), np.load("results/output.npy") 
+actual_pixel_labels, predicted_pixel_labels = np.load("results/results/y.npy"), np.load("results/results/output.npy") 
 if BILATERAL_FILTERING:
 	predicted_pixel_labels = np.array([denoise_bilateral(im) for im in predicted_pixel_labels])
 save_random_images(actual_pixel_labels, predicted_pixel_labels, 3)

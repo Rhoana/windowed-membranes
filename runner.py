@@ -32,7 +32,7 @@ class ConvNetClassifier(object):
         cPickle.dump(obj, f, protocol=cPickle.HIGHEST_PROTOCOL)
         f.close()
 
-    def process_cmd_line_args(self,in_window_shape,out_window_shape,stride,img_size, classifier, n_train_files, n_test_files, samples_per_image, on_ratio, membrane_edges):
+    def process_cmd_line_args(self,in_window_shape,out_window_shape,stride,img_size, classifier, n_train_files, n_test_files, samples_per_image, on_ratio, membrane_edges,layers_3D):
         
         if len(sys.argv) > 1 and ( "--small" in sys.argv):
             num_kernels   = [10,10,10]
@@ -89,7 +89,7 @@ class ConvNetClassifier(object):
 
         if "--pre-process" in sys.argv:
             print "Generating Train/Test Set..."
-            read = Read(in_window_shape, out_window_shape, stride, img_size, classifier, n_train_files, n_test_files, samples_per_image, on_ratio, directory_input, directory_labels, membrane_edges)
+            read = Read(in_window_shape, out_window_shape, stride, img_size, classifier, n_train_files, n_test_files, samples_per_image, on_ratio, directory_input, directory_labels, membrane_edges,layers_3D)
             read.generate_data()
 
         return num_kernels, kernel_sizes, maxoutsize, classifier
@@ -118,6 +118,7 @@ class ConvNetClassifier(object):
         img_size             = (1024,1024)
         n_train_files        = None
         n_test_files         = 5
+        layers_3D            = 1
 
         
         # Optimizer data
@@ -140,7 +141,7 @@ class ConvNetClassifier(object):
         
         
         ##### PROCESS COMMAND-LINE ARGS #####
-        num_kernels, kernel_sizes, maxoutsize,classifier = self.process_cmd_line_args(in_window_shape,out_window_shape,stride,img_size, classifier, n_train_files, n_test_files, samples_per_image, on_ratio, membrane_edges)
+        num_kernels, kernel_sizes, maxoutsize,classifier = self.process_cmd_line_args(in_window_shape,out_window_shape,stride,img_size, classifier, n_train_files, n_test_files, samples_per_image, on_ratio, membrane_edges,layers_3D)
 
         print 'Loading data ...'
 
@@ -176,7 +177,7 @@ class ConvNetClassifier(object):
         x       = T.matrix('x')        # input image data
         y       = T.matrix('y')        # input label data
         
-        cov_net = CovNet(rng, batch_size, num_kernels, kernel_sizes, x, y,in_window_shape,out_window_shape,classifier,maxoutsize = maxoutsize, params = self.params)
+        cov_net = CovNet(rng, batch_size,layers_3D, num_kernels, kernel_sizes, x, y,in_window_shape,out_window_shape,classifier,maxoutsize = maxoutsize, params = self.params)
 
         # Initialize parameters and functions
         cost        = cov_net.layer4.negative_log_likelihood(y,penatly_factor) # Cost function
@@ -240,7 +241,7 @@ class ConvNetClassifier(object):
             for epoch in range(epochs):
                 t1 = time.time()
                 perm              = srng.shuffle_row_elements(perm)
-                train_set_x,train_set_y = f.flip_rotate(train_set_x,train_set_y,in_window_shape,out_window_shape,perm,index,cost,updates,batch_size,x,y,classifier)
+                train_set_x,train_set_y = f.flip_rotate(train_set_x,train_set_y,in_window_shape,out_window_shape,perm,index,cost,updates,batch_size,x,y,classifier,layers_3D)
                 costs             = [train_model(i) for i in xrange(n_train_batches)]
                 validation_losses = [validate_model(i) for i in xrange(n_valid_batches)]
                 t2 = time.time()

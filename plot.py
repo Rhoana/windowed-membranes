@@ -38,8 +38,8 @@ def plot_samples(n=0):
 def plot(n=0):
     n = int(n)
     
-    y      = np.load('results/y.npy')
-    output = np.load('results/output.npy')
+    y      = np.load('results/results/y.npy')
+    output = np.load('results/results/output.npy')
 
     print y.shape
     print output.shape
