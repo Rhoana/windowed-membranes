@@ -69,43 +69,21 @@ class ConvNetClassifier(object):
         path = 'parameters/params.dat'
         self.path = path
         
-        if "--load-weights_all" in sys.argv: 
+        if "--load-weights" in sys.argv: 
+            total_n_layers = 5
+            
             if os.path.isfile(path) == True:
                 params = self.load_params(path)
                 self.params = params
             else:
                 self.params = None
             print 'Warning: Unable to load weights'
-        elif "--load-weights_1" in sys.argv: 
-            load_n_layers = 1
-            params = self.load_params(path)
-            for n in xrange(load_n_layers,total_n_layers):
-                del params["W"+str(n)]
-                del params["b"+str(n)]
-            self.params = params
-        elif "--load-weights_2" in sys.argv: 
-            load_n_layers = 2
-            params = self.load_params(path)
-            for n in xrange(load_n_layers,total_n_layers):
-                del params["W"+str(n)]
-                del params["b"+str(n)]
-            self.params = params
-        elif "--load-weights_3" in sys.argv: 
-            load_n_layers = 3
-            params = self.load_params(path)
-            for n in xrange(load_n_layers,total_n_layers):
-                del params["W"+str(n)]
-                del params["b"+str(n)]
-            self.params = params
-        elif "--load-weights_4" in sys.argv: 
-            load_n_layers = 4
-            params = self.load_params(path)
-            for n in xrange(load_n_layers,total_n_layers):
-                del params["W"+str(n)]
-                del params["b"+str(n)]
 
-            self.params = params
-
+            if sys.argv.index("--load-weights") + 1 < len(sys.argv):
+                load_n_layers = sys.argv[sys.argv.index("--load-weights") + 1]
+                for n in xrange(load_n_layers,total_n_layers):
+                    del self.params["W"+str(n)]
+                    del self.params["b"+str(n)]
 
         if "--pre-process" in sys.argv:
             print "Generating Train/Test Set..."
