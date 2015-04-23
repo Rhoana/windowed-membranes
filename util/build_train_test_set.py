@@ -21,11 +21,10 @@ class BuildTrainTestSet(object):
             folder_name = 'synapse_windows'
 
         # Load training and test set 
-        train_set_x = np.load('../pre_process/data_strucs/' + folder_name + '/x_train.npy')
-        train_set_y = np.load('../pre_process/data_strucs/' + folder_name + '/y_train.npy')
-        test_set_x  = np.load('../pre_process/data_strucs/' + folder_name + '/x_test.npy')
-        test_set_y  = np.load('../pre_process/data_strucs/' + folder_name + '/y_test.npy')
-
+        train_set_x = np.load('pre_process/data_strucs/' + folder_name + '/x_train.npy')
+        train_set_y = np.load('pre_process/data_strucs/' + folder_name + '/y_train.npy')
+        test_set_x  = np.load('pre_process/data_strucs/' + folder_name + '/x_test.npy')
+        test_set_y  = np.load('pre_process/data_strucs/' + folder_name + '/y_test.npy')
 
         if train_set_y.ndim != 2 or test_set_y.ndim != 2:
             train_set_y = train_set_y.reshape(train_set_y.shape[0],1)

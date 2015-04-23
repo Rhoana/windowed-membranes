@@ -330,7 +330,7 @@ class ConvNetClassifier(object):
         print 'F1 score (after averaging): ', f1
         
         results_folder_name = folder_name + ' at ' + self.ID
-        os.makedirs(results_folder_name)
+        os.makedirs('results/' + results_folder_name)
         np.save('results/' + results_folder_name + '/results.npy', results)
         np.save('results/' + results_folder_name + '/output.npy', output)
         np.save('results/' + results_folder_name + '/x.npy', test_set_x.get_value(borrow=True).reshape(in_shape))

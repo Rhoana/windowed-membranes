@@ -178,7 +178,6 @@ class Read(object):
     def define_arrays(self,directory_input,directory_labels):
         
         print('Defining input ...')
-        print 'hey'
 
         files_input  = []
         files_labels = []
@@ -188,12 +187,6 @@ class Read(object):
         for directory in directory_labels:
             files_labels = (files_labels + sorted(glob.glob(directory+"/*.tif")))
         img_real_stack = np.zeros((0,self.img_size[0]**2))
-
-        files_input = files_input[:2]
-        files_labels = files_labels[:2]
-
-        print files_input
-        print files_labels
 
         for File in files_input:
             img_temp = Image.open(File)                                                        
@@ -326,8 +319,8 @@ class Read(object):
         else:
             folder_name = 'synapse_windows'
             
-        np.save('data_strucs/' + folder_name + '/x_train.npy',x)
-        np.save('data_strucs/'  + folder_name + 'y_train.npy',y)
+        np.save('pre_process/data_strucs/' + folder_name + '/x_train.npy',x)
+        np.save('pre_process/data_strucs/'  + folder_name + '/y_train.npy',y)
 
         if self.classifier in ['synaspe','membrane']:
             x = np.zeros((0,self.in_window_shape[0]*self.in_window_shape[1]))
@@ -375,9 +368,9 @@ class Read(object):
             y     = np.vstack((y,labels))
             table = np.vstack((table,table_temp))
 
-        np.save('data_strucs/' + folder_name + '/x_test.npy',x)
-        np.save('data_strucs/' + folder_name + '/y_test.npy',y)
-        np.save('data_strucs' + folder_name + '/table.npy',table)
+        np.save('pre_process/data_strucs/' + folder_name + '/x_test.npy',x)
+        np.save('pre_process/data_strucs/' + folder_name + '/y_test.npy',y)
+        np.save('pre_process/data_strucs/' + folder_name + '/table.npy',table)
         
         print 'Done ... '
 
