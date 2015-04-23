@@ -6,29 +6,30 @@ import sys
 def post_process(x_train,y_train,output,y,table,img_shape,in_window_shape,out_window_shape,classifier,n_train_examples = 100):
 
     if classifier == 'synapse_reg':
-        print x_train.shape
-        print y_train.shape
-        print output.shape
         
         diff = in_window_shape[0]-out_window_shape[0]    
 
         nr_images    = int(np.max(table[:,0]) + 1)
-        print nr_images
         y_whole      = np.zeros((nr_images, (img_shape[0]-diff)/out_window_shape[0], (img_shape[0]-diff)/out_window_shape[0]))
         output_whole = np.zeros((nr_images, (img_shape[0]-diff)/out_window_shape[0], (img_shape[0]-diff)/out_window_shape[0]))
 
-        print y_whole.shape,output_whole.shape
         for i in xrange(table.shape[0]):
-            y_whole[table[i,0],table[i,1],table[i,2]]      = y[i]
-            output_whole[table[i,0],table[i,1],table[i,2]] = output[i]
+            ######################
 
-        print y_whole.shape,output_whole.shape
+
+            #NEEEEEEEEEEEEEEEEEED TO FIX THIS
+
+            ##########################
+            y_whole[table[i,0],int(table[i,1]),int(table[i,2])]      = y[i]
+            output_whole[table[i,0],int(table[i,1)],int(table[i,2])] = output[i]
+
+            #################
+            # QUICK FIX
+            #################
+
         ## Transpose for some reason
         #for n in xrange(nr_images):
         #    y_whole[n]      = y_whole[n].T
-        #    output_whole[n] = output_whole[n].T
-
-        print y_whole.shape,output_whole.shape
 
     elif classifier in ['membrane','synapse']:
         diff = in_window_shape[0]-out_window_shape[0]    

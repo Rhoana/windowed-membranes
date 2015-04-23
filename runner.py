@@ -5,7 +5,7 @@ import numpy as np
 import theano
 import theano.tensor as T
 from theano.tensor.shared_randomstreams import RandomStreams
-from util.pre_process                  import PreProcess 
+from util.build_train_test_set          import BuildTrainTestSet 
 from data.read_img                     import Read 
 from edge_prediction_conv.edge_cov_net import CovNet 
 from edge_prediction_conv.helper_functions import Functions as f 
@@ -143,8 +143,8 @@ class ConvNetClassifier(object):
         print 'Loading data ...'
 
         # load in and process data
-        preProcess              = PreProcess(n_validation_samples)
-        data                    = preProcess.run()
+        preProcess              = BuildTrainTestSet(n_validation_samples)
+        data                    = preProcess.run(classifier)
         train_set_x,train_set_y = data[0],data[3]
         valid_set_x,valid_set_y = data[1],data[4]
         test_set_x,test_set_y   = data[2],data[5]
@@ -312,7 +312,14 @@ class ConvNetClassifier(object):
         results[1] = np.array(val_results)
         results[2] = np.array(time_results)
 
-        table = np.load('data/table.npy')
+        if classifier == 'synapse':
+            folder_name = 'synapse_pixels'
+        elif .classifier == 'membrane':
+            folder_name = 'edges'
+        else:
+            folder_name = 'synapse_windows'
+
+        table = np.load('pre_process/data_strucs/' + folder_name + '//table.npy')
         output, y = post.post_process(train_set_x.get_value(borrow=True),train_set_y.get_value(borrow=True),output,test_set_y.get_value(borrow=True),table,img_size,in_window_shape,out_window_shape,classifier)
 
         mean_abs_error = np.mean(np.abs(output-y))
@@ -332,11 +339,4 @@ if __name__ == "__main__":
     
     classifier = ConvNetClassifier()
     classifier.run()
-
-    
-    
-    
-    
-    
-    
 

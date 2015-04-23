@@ -53,9 +53,9 @@ class Read(object):
 
     def find_synapse(self,img,File,edges = False):
         
-        if File != 'data/AC3-labels/AC3_SynTruthVolume.tif':
+        if File != '../data/AC3-labels/AC3_SynTruthVolume.tif':
             threshold = 399
-        if File == 'data/AC3-labels/AC3_SynTruthVolume.tif':
+        if File == '../data/AC3-labels/AC3_SynTruthVolume.tif':
             threshold = 0
 
 
@@ -311,9 +311,16 @@ class Read(object):
             else:
                 print 'Error: Invalid Classifier'
                 exit()
-
-        np.save('data/x_train.npy',x)
-        np.save('data/y_train.npy',y)
+        
+        if self.classifier == 'synapse':
+            folder_name = 'synapse_pixels'
+        elif self.classifier == 'membrane':
+            folder_name = 'edges'
+        else:
+            folder_name = 'synapse_windows'
+            
+        np.save('data_strucs/' + folder_name + '/x_train.npy',x)
+        np.save('data_strucs/'  + folder_name + 'y_train.npy',y)
 
         if self.classifier in ['synaspe','membrane']:
             x = np.zeros((0,self.in_window_shape[0]*self.in_window_shape[1]))
@@ -361,9 +368,9 @@ class Read(object):
             y     = np.vstack((y,labels))
             table = np.vstack((table,table_temp))
 
-        np.save('data/x_test.npy',x)
-        np.save('data/y_test.npy',y)
-        np.save('data/table.npy',table)
+        np.save('data_strucs/' + folder_name + '/x_test.npy',x)
+        np.save('data_strucs/' + folder_name + '/y_test.npy',y)
+        np.save('data_strucs' + folder_name + '/table.npy',table)
         
         print 'Done ... '
 
@@ -433,8 +440,8 @@ class Read(object):
                     labels[table_number,0]      = np.mean(thick_edged[label_start_y:label_end_y, label_start_x:label_end_x])
 
                     table[table_number,0] = img_number
-                    table[table_number,1] = n
-                    table[table_number,2] = m
+                    table[table_number,1] = label_start_y/float(out_window_shape[0])
+                    table[table_number,2] = label_start_x/float(out_window_shape[0])
                     table_number += 1
 
         else:

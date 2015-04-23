@@ -6,18 +6,25 @@ import os
 theano.config.floatX = 'float32'
 rng = np.random.RandomState(42)
 
-class PreProcess(object):
+class BuildTrainTestSet(object):
 
     def __init__(self,n_val_samples):
         self.n_val_samples = n_val_samples
     
-    def run(self):
+    def run(self, classifier):
+        
+        if self.classifier == 'synapse':
+            folder_name = 'synapse_pixels'
+        elif self.classifier == 'membrane':
+            folder_name = 'edges'
+        else:
+            folder_name = 'synapse_windows'
 
         # Load training and test set 
-        train_set_x = np.load('data/x_train.npy')
-        train_set_y = np.load('data/y_train.npy')
-        test_set_x  = np.load('data/x_test.npy')
-        test_set_y  = np.load('data/y_test.npy')
+        train_set_x = np.load('../pre_process/data_strucs/' + folder_name + '/x_train.npy')
+        train_set_y = np.load('../pre_process/data_strucs/' + folder_name + '/y_train.npy')
+        test_set_x  = np.load('../pre_process/data_strucs/' + folder_name + '/x_test.npy')
+        test_set_y  = np.load('../pre_process/data_strucs/' + folder_name + '/y_test.npy')
 
 
         if train_set_y.ndim != 2 or test_set_y.ndim != 2:
