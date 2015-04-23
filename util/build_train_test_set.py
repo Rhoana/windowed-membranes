@@ -13,9 +13,9 @@ class BuildTrainTestSet(object):
     
     def run(self, classifier):
         
-        if self.classifier == 'synapse':
+        if classifier == 'synapse':
             folder_name = 'synapse_pixels'
-        elif self.classifier == 'membrane':
+        elif classifier == 'membrane':
             folder_name = 'edges'
         else:
             folder_name = 'synapse_windows'

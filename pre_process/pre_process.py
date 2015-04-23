@@ -178,15 +178,22 @@ class Read(object):
     def define_arrays(self,directory_input,directory_labels):
         
         print('Defining input ...')
+        print 'hey'
 
         files_input  = []
         files_labels = []
 
         for directory in directory_input:
-            files_input = files_input + sorted(glob.glob(directory+"/*.tif"))
+            files_input = (files_input + sorted(glob.glob(directory+"/*.tif")))
         for directory in directory_labels:
-            files_labels = files_labels + sorted(glob.glob(directory+"/*.tif"))
+            files_labels = (files_labels + sorted(glob.glob(directory+"/*.tif")))
         img_real_stack = np.zeros((0,self.img_size[0]**2))
+
+        files_input = files_input[:2]
+        files_labels = files_labels[:2]
+
+        print files_input
+        print files_labels
 
         for File in files_input:
             img_temp = Image.open(File)                                                        

@@ -6,16 +6,18 @@ import theano
 import theano.tensor as T
 from theano.tensor.shared_randomstreams import RandomStreams
 from util.build_train_test_set          import BuildTrainTestSet 
-from data.read_img                     import Read 
+from pre_process.pre_process            import Read 
 from edge_prediction_conv.edge_cov_net import CovNet 
 from edge_prediction_conv.helper_functions import Functions as f 
 import util.post_process as post 
 import cPickle
+import datetime
 
 class ConvNetClassifier(object):
-
+    
     def __init__(self,params = {}):
         self.params = params
+        self.ID = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S')
 
     # --------------------------------------------------------------------------
     def load_params(self, path):
@@ -314,7 +316,7 @@ class ConvNetClassifier(object):
 
         if classifier == 'synapse':
             folder_name = 'synapse_pixels'
-        elif .classifier == 'membrane':
+        elif classifier == 'membrane':
             folder_name = 'edges'
         else:
             folder_name = 'synapse_windows'
@@ -326,14 +328,13 @@ class ConvNetClassifier(object):
         f1 = f1_score(y.flatten().astype(np.int32),np.round(output).flatten().astype(np.int32))
         print 'Mean Absolute Error (after averaging): ', mean_abs_error
         print 'F1 score (after averaging): ', f1
-
-        if not os.path.exists('results'):
-            os.makedirs('results')
-
-        np.save('results/results.npy',results)
-        np.save('results/output.npy',output)
-        np.save('results/x.npy',test_set_x.get_value(borrow=True).reshape(in_shape))
-        np.save('results/y.npy',y)
+        
+        results_folder_name = folder_name + ' at ' + self.ID
+        os.makedirs(results_folder_name)
+        np.save('results/' + results_folder_name + '/results.npy', results)
+        np.save('results/' + results_folder_name + '/output.npy', output)
+        np.save('results/' + results_folder_name + '/x.npy', test_set_x.get_value(borrow=True).reshape(in_shape))
+        np.save('results/' + results_folder_name + '/y.npy', y)
 
 if __name__ == "__main__":
     
