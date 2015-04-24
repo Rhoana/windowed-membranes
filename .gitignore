@@ -17,3 +17,4 @@ misc/.ipynb_checkpoints/*
 results/*.txt
 results/*.png
 results/samples/*.png
+parameters/params.dat
