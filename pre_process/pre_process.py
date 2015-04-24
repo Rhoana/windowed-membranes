@@ -41,7 +41,7 @@ class Read(object):
     def find_edges(self,img):
 
         threshold = 399
-        # Remove synapsis
+        # Remove synapses
         for n in xrange(img.shape[0]):
             for m in xrange(img.shape[1]):
                 if img[n,m] > threshold:
@@ -54,13 +54,13 @@ class Read(object):
 
     def find_synapse(self,img,File,edges = False):
         
-        if File != '../data/AC3-labels/AC3_SynTruthVolume.tif':
+        if File != 'data/AC3-labels/AC3_SynTruthVolume.tif':
             threshold = 399
-        if File == '../data/AC3-labels/AC3_SynTruthVolume.tif':
+        if File == 'data/AC3-labels/AC3_SynTruthVolume.tif':
             threshold = 0
 
 
-        if File == 'AC3_SynTruthVolume.tif':
+        if File == 'data/AC3_SynTruthVolume.tif':
             import matplotlib.pyplot as plt
             plt.imshow(img,cmap=plt.cm.gray)
             plt.show()
@@ -238,35 +238,34 @@ class Read(object):
             files_input = sorted(glob.glob(directory+"/*.tif"))
         
             for File in files_input:
+                
                 img_temp = Image.open(File)                                                        
-                                                    
                 flag = True                                                                     
                 i = 0                                                                           
                 while flag == True:                                                             
                     try:                                                                        
-                        img_temp.seek(i)                                                             
-                        img_real_stack = np.vstack((img_real_stack,np.asarray(img_temp).flatten(1)))           
+                        img_temp.seek(i)                           
+                        img_temp_temp = np.array(img_temp.getdata()).reshape(img_temp.size)                                  
+                        img_real_stack = np.vstack((img_real_stack,img_temp_temp.flatten(1)))           
                         i += 1     
                         counter +=1
                     except EOFError:                                                            
                         flag = False 
 
             image_groups.append(counter)
-
+	
         img_stack = np.zeros((0,self.img_size[0]**2))
-
+	
         for directory in directory_labels:
             files_labels = sorted(glob.glob(directory+"/*.tif"))
-
             for File in files_labels:
                 img_temp = Image.open(File)                                                        
-                                                    
                 flag = True                                                                     
-                i = 0                                                                           
+                i = 0                                                                         
                 while flag == True:                                                             
-                    try:                                                                        
+                    try:            
                         img_temp.seek(i)
-                        img_temp_temp = np.asarray(img_temp)
+                        img_temp_temp = np.array(img_temp.getdata()).reshape(img_temp.size)
                         img_temp_temp.flags.writeable = True
                         if self.classifier == 'membrane':
                             img_temp_temp = self.find_edges(img_temp_temp)
@@ -279,7 +278,7 @@ class Read(object):
                         flag = False   
 
         total_files = img_stack.shape[0]
-
+        print total_files
         if self.n_train_files == None:
             train_img_input  = img_real_stack[:(total_files-self.n_test_files)]
             train_img_labels = img_stack[:(total_files-self.n_test_files)]
@@ -309,7 +308,7 @@ class Read(object):
         train_img_labels = train_img_labels.reshape(train_img_labels.shape[0],self.img_size[0],self.img_size[1])
         test_img_input   = test_img_input.reshape(test_img_input.shape[0],self.img_size[0],self.img_size[1])
         test_img_labels  = test_img_labels.reshape(test_img_labels.shape[0],self.img_size[0],self.img_size[1])
-
+	
         return train_img_input,train_img_labels,test_img_input,test_img_labels,img_group_train,img_group_test
 
     def process_images(self,train_img_input,train_img_labels):
@@ -483,9 +482,6 @@ class Read(object):
             folder_name = 'edges'
         else:
             folder_name = 'synapse_windows'
-
-        print train_x.shape
-        print train_y.shape
             
         np.save('pre_process/data_strucs/' + folder_name + '/x_train.npy',train_x)
         np.save('pre_process/data_strucs/'  + folder_name + '/y_train.npy',train_y)
@@ -509,10 +505,6 @@ class Read(object):
                 test_x = np.vstack((test_x,img_samples))
                 test_y = np.vstack((test_y,labels))
                 table = np.vstack((table_temp))
-
-        print train_x.shape
-        print train_y.shape
-        print table.shape
 
         np.save('pre_process/data_strucs/' + folder_name + '/x_test.npy',test_x)
         np.save('pre_process/data_strucs/' + folder_name + '/y_test.npy',test_y)

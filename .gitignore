@@ -14,3 +14,6 @@ synapse_train_data/*.pyc
 results/*.npy
 .ipynb_checkpoints/*
 misc/.ipynb_checkpoints/*
+results/*.txt
+results/*.png
+results/samples/*.png
