@@ -9,7 +9,6 @@ class Functions(object):
 
     @staticmethod
     def flip_rotate(train_set_x,train_set_y,in_window_shape,out_window_shape,perm,index,cost,updates,batch_size,x,y,classifier,layers_3D):
-
         temp_x     = train_set_x.get_value(borrow = True)
         temp_y     = train_set_y.get_value(borrow = True)
 
@@ -48,7 +47,7 @@ class Functions(object):
 
 
         elif classifier == 'synapse_reg':
-            temp_x     = temp_x.reshape(temp_x.shape[0],layers3D,in_window_shape[0],in_window_shape[1])
+            temp_x     = temp_x.reshape(temp_x.shape[0],layers_3D,in_window_shape[0],in_window_shape[1])
             temp_y     = temp_y.reshape(temp_y.shape[0],1)
             
             n_temp_x   = temp_x.shape[0]
@@ -69,11 +68,12 @@ class Functions(object):
             for n in xrange(flip2_n):
                 temp_x[perm2[n]] = temp_x[perm2[n],:,:,::-1]
 
+            ############# ROTATIONS TAKEN OUT
             #for n in xrange(flip2_n):
             #    rand = np.random.randint(1,4)
             #    temp_x[perm2[n]] = np.rot90(temp_x[perm2[n]],rand)
 
-            temp_x = temp_x.reshape(temp_x.shape[0],layers_3D*temp_x.shape[1]**2)
+            temp_x = temp_x.reshape(temp_x.shape[0],layers_3D*temp_x.shape[2]**2)
 
         train_set_x.set_value(temp_x, borrow = True)
         train_set_y.set_value(temp_y, borrow = True)

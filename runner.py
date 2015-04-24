@@ -118,7 +118,7 @@ class ConvNetClassifier(object):
         img_size             = (1024,1024)
         n_train_files        = None
         n_test_files         = 5
-        layers_3D            = 1
+        layers_3D            = 3
 
         
         # Optimizer data
@@ -168,7 +168,6 @@ class ConvNetClassifier(object):
             batch_size += 1 
 
         print 'Batch size: ',batch_size
-
         n_train_batches /= batch_size
         n_test_batches  /= batch_size
         n_valid_batches /= batch_size
@@ -302,10 +301,10 @@ class ConvNetClassifier(object):
         print 'F1 score (before averaging): ',f1_score(y.flatten().astype(np.int32),np.round(y_pred).flatten().astype(np.int32))
         
         if classifier in ['membrane', 'synapse']:
-            in_shape = (output.shape[0],in_window_shape[0],in_window_shape[1])
+            in_shape = (output.shape[0],layers_3D,in_window_shape[0],in_window_shape[1])
             out_shape = (output.shape[0],out_window_shape[0],out_window_shape[1])
         elif classifier == 'synapse_reg':
-            in_shape = (output.shape[0],in_window_shape[0],in_window_shape[1])
+            in_shape = (output.shape[0],layers_3D,in_window_shape[0],in_window_shape[1])
             out_shape = (output.shape[0],1)
 
         output = output.reshape(out_shape)

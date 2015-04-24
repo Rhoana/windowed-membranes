@@ -51,11 +51,7 @@ class LogisticRegression(object):
                 borrow=True
             )
         
-        # Apply sigmoid function on output
-        #if self.classifier != 'synapse_reg':
         self.p_y_given_x = T.nnet.sigmoid(T.dot(input, self.W) + self.b)
-        #else:
-        #    self.p_y_given_x = T.minimum(T.maximum(T.dot(input,self.W) + self.b, 0.),1.0)
 
         # Define parameters in list
         self.params = [self.W, self.b]
