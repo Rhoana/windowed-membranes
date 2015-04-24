@@ -61,8 +61,8 @@ class ConvNetClassifier(object):
             directory_input      = ['data/train-input']
             directory_labels     = ['data/train-labels']
         elif classifier in ['synapse','synapse_reg']:
-            directory_input      = ['data/train-input','data/AC3-input']
-            directory_labels     = ['data/train-labels','data/AC3-labels']
+            directory_input      = ['data/train-input'] #,'data/AC3-input']
+            directory_labels     = ['data/train-labels'] #,'data/AC3-labels']
 
         # path to store parameters        
         if not os.path.exists('parameters'):
@@ -104,7 +104,7 @@ class ConvNetClassifier(object):
 
         # Hyper-parameters 
         batch_size       = 30
-        epochs           = 100
+        epochs           = 30
         in_window_shape  = (64,64)
         out_window_shape = (12,12)
         penatly_factor   = 0.,
@@ -117,7 +117,7 @@ class ConvNetClassifier(object):
         on_ratio             = 0.5
         img_size             = (1024,1024)
         n_train_files        = None
-        n_test_files         = 5
+        n_test_files         = 10
         layers_3D            = 3
 
         
@@ -297,9 +297,6 @@ class ConvNetClassifier(object):
         
         print 'Mean Absolute Error (before averaging): ',mean_abs_error
 
-        from sklearn.metrics import f1_score
-        print 'F1 score (before averaging): ',f1_score(y.flatten().astype(np.int32),np.round(y_pred).flatten().astype(np.int32))
-        
         if classifier in ['membrane', 'synapse']:
             in_shape = (output.shape[0],layers_3D,in_window_shape[0],in_window_shape[1])
             out_shape = (output.shape[0],out_window_shape[0],out_window_shape[1])
@@ -325,9 +322,7 @@ class ConvNetClassifier(object):
         output, y = post.post_process(train_set_x.get_value(borrow=True),train_set_y.get_value(borrow=True),output,test_set_y.get_value(borrow=True),table,img_size,in_window_shape,out_window_shape,classifier)
 
         mean_abs_error = np.mean(np.abs(output-y))
-        f1 = f1_score(y.flatten().astype(np.int32),np.round(output).flatten().astype(np.int32))
         print 'Mean Absolute Error (after averaging): ', mean_abs_error
-        print 'F1 score (after averaging): ', f1
         
         results_folder_name = folder_name + ' at ' + self.ID
         os.makedirs('results/' + results_folder_name)

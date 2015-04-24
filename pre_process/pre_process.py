@@ -42,11 +42,7 @@ class Read(object):
 
         threshold = 399
         # Remove synapses
-        for n in xrange(img.shape[0]):
-            for m in xrange(img.shape[1]):
-                if img[n,m] > threshold:
-                    img[n,m] = 0
-
+        img[np.where(img>threshold)] = 0
         img = self.edge_filter(img)
 
         edged = self.convert_binary(img)
@@ -59,27 +55,19 @@ class Read(object):
         if File == 'data/AC3-labels/AC3_SynTruthVolume.tif':
             threshold = 0
 
-
         if File == 'data/AC3_SynTruthVolume.tif':
             import matplotlib.pyplot as plt
             plt.imshow(img,cmap=plt.cm.gray)
             plt.show()
 
         # Find synapse
-        for n in xrange(img.shape[0]):
-            for m in xrange(img.shape[1]):
-                if img[n,m] > threshold:
-                    img[n,m] = 1
-                else:
-                    img[n,m] = 0
+        img[np.where(img<threshold)] = 0
+        img[np.where(img>threshold)] = 1
 
         return img
 
     def convert_binary(self,imarray):
-        for n in xrange(imarray.shape[0]):
-            for m in xrange(imarray.shape[1]):
-                if imarray[n,m] >0:
-                    imarray[n,m] = 1
+        imarray[np.where(imarray>0)] = 1
         return imarray
 
     def thick_edge(self,imarray):
@@ -99,7 +87,7 @@ class Read(object):
                     thickarray[n+1,m-1] = 1
         return thickarray
 
-    def sample_membrane_synapse(self,nn,imarray,thick_edged,input_image,n_samples,image_group_train,sample_stride = 4,on_membrane_synapse = False,diff_samples = 0,on_synapse_threshold = 0.1):
+    def sample_membrane_synapse(self,nn,imarray,thick_edged,input_image,n_samples,image_group_train,sample_stride = 4,on_membrane_synapse = False,diff_samples = 0,on_synapse_threshold = 0.3):
 
         n_samples -= diff_samples
 
