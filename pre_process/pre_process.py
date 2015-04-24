@@ -449,6 +449,7 @@ class Read(object):
         off_samples = self.samples_per_image - on_samples
 
         # Define training arrays 
+        ######## FIX for synapse reg
         train_x = np.zeros((0,self.layers_3D*self.in_window_shape[0]**2))
         train_y = np.zeros((0,self.out_window_shape[0]**2))
 
