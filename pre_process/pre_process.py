@@ -453,9 +453,6 @@ class Read(object):
                     x_temp, y_temp = np.zeros((0, self.in_window_shape[0]*self.in_window_shape[1])), np.zeros((0, self.out_window_shape[0]*self.out_window_shape[1])) 
                     x_temp,y_temp, diff_samples = sample_function(n, labeled_in, labeled_out, train_img_input,on_samples, img_group_train,on_membrane_synapse = True)
                     
-                    print "train_x shape: ", train_x.shape, "x_temp shape", x_temp.shape
-                    print "train_y shape: ", train_y.shape, "y_temp shape", y_temp.shape
-                    
                     try:
                         train_x = np.vstack((train_x, x_temp))
                         train_y = np.vstack((train_y, y_temp))
