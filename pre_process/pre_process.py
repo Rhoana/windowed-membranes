@@ -297,7 +297,7 @@ class Read(object):
 	
         return train_img_input,train_img_labels,test_img_input,test_img_labels,img_group_train,img_group_test
 
-    def process_images(self,train_img_labels):
+    def process_images(self,train_img_output,train_img_labels):
         labeled_in  = np.zeros(train_img_labels.shape)
         labeled_out = np.zeros(train_img_labels.shape)
 
@@ -326,9 +326,9 @@ class Read(object):
 
             if self.adaptive_histogram_equalization:
                 # Adaptive Equalization
-                labeled_out[n] = exposure.equalize_adapthist(labeled_out[n], clip_limit=0.03)
+                train_img_input[n] = exposure.equalize_adapthist(train_img_input[n], clip_limit=0.03)
 
-        return labeled_in,labeled_out
+        return labeled_in,labeled_out,train_img_input
 
     def generate_test_membrane_synapse(self,thick_edged, img_real, img_number):
         
@@ -433,7 +433,7 @@ class Read(object):
         
         # Process train images, find synapses, edges and do edge processing
         # (blurring, widening) if specified
-        labeled_in,labeled_out = self.process_images(train_img_labels)
+        labeled_in,labeled_out, train_img_input = self.process_images(train_img_input,train_img_labels)
 
         print('Pre-processing images...')
 
@@ -485,7 +485,7 @@ class Read(object):
         print "Finished train set"
 
         # Process test images (wide edges, add gaussian blur etc.)
-        labeled_in,labeled_out = self.process_images(test_img_labels)
+        labeled_in,labeled_out,test_img_input = self.process_images(test_img_input,test_img_labels)
 
         # Define training arrays 
         if self.classifier in ['membrane','synapse']:
