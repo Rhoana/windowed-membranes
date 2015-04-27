@@ -8,32 +8,33 @@ import scipy
 from scipy import ndimage
 import matplotlib.pyplot as plt
 from scipy import misc
+from skimage import exposure
 from PIL import Image 
 
 class Read(object):
 
-    def __init__(self,in_window_shape, out_window_shape, stride, img_size, classifier, n_train_files, n_test_files, samples_per_image, on_ratio, directory_input, directory_labels, membrane_edges,layers_3D):
-        self.in_window_shape   = in_window_shape
-        self.out_window_shape  = out_window_shape 
-        self.stride            = stride
-        self.img_size          = img_size
-        self.n_train_files     = n_train_files
-        self.n_test_files      = n_test_files
-        self.samples_per_image = samples_per_image
-        self.on_ratio          = on_ratio
-        self.classifier        = classifier 
-        self.directory_input   = directory_input
-        self.directory_labels  = directory_labels
-        self.membrane_edges     = membrane_edges
-        self.sigma              = 3 
-        self.layers_3D          = layers_3D
+    def __init__(self,in_window_shape, out_window_shape, stride, img_size, classifier, n_train_files, n_test_files, samples_per_image, on_ratio, directory_input, directory_labels, membrane_edges,layers_3D, adaptive_histogram_equalization):
+        self.in_window_shape                 = in_window_shape
+        self.out_window_shape                = out_window_shape 
+        self.stride                          = stride
+        self.img_size                        = img_size
+        self.n_train_files                   = n_train_files
+        self.n_test_files                    = n_test_files
+        self.samples_per_image               = samples_per_image
+        self.on_ratio                        = on_ratio
+        self.classifier                      = classifier 
+        self.directory_input                 = directory_input
+        self.directory_labels                = directory_labels
+        self.membrane_edges                  = membrane_edges
+        self.sigma                           = 3 
+        self.layers_3D                       = layers_3D
+        self.adaptive_histogram_equalization = adaptive_histogram_equalization
 
     def edge_filter(self,img):
         scharr = np.array([[ -3-3j, 0-10j,  +3 -3j],[-10+0j, 0+ 0j, +10 +0j],[ -3+3j, 0+10j,  +3 +3j]])
         grad = signal.convolve2d(img, scharr, boundary='symm', mode='same')                                                    
         grad = np.absolute(grad).astype(np.float32)
-        grad = grad/np.max(grad)
-                                                
+        grad = grad/np.max(grad)                             
         return grad    
 
     def find_edges(self,img):
@@ -322,6 +323,10 @@ class Read(object):
 
             elif self.classifier is 'synapse_reg':
                 labeled_in[n],labeled_out[n] = train_img_labels[n],train_img_labels[n]
+
+            if self.adaptive_histogram_equalization:
+                # Adaptive Equalization
+                labeled_out[n] = exposure.equalize_adapthist(labeled_out[n], clip_limit=0.03)
 
         return labeled_in,labeled_out
 

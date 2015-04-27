@@ -1,6 +1,6 @@
-Probability threshold is 0.472792792793F1 score is 0.235517568851
-Jaccard similarity score is 0.984663161103
-ROC AUC score is 0.69534814553
+Probability threshold is 0.509459459459F1 score is 0.235406698565
+Jaccard similarity score is 0.984777472946
+ROC AUC score is 0.693791844415
 Full Classification Report:
                precision    recall  f1-score   support
 

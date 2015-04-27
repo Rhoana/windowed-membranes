@@ -57,3 +57,7 @@ convolution:
       folder_name: 'synapse_windows'
 weights_path: 
   weights_path: 'parameters/params.dat'
+pre-process:
+  adaptive_histogram_equalization: False
+  pre_process_only: False
+  pre_process: True

@@ -50,7 +50,7 @@ class ConvNetClassifier(object):
 
     def generate_train_test_set(self):
         print "Generating Train/Test Set..."
-        read = Read(self.in_window_shape, self.out_window_shape, self.stride, self.img_size, self.classifier, self.n_train_files, self.n_test_files, self.samples_per_image, self.on_ratio, self.directory_input, self.directory_labels, self.membrane_edges,self.layers_3D)
+        read = Read(self.in_window_shape, self.out_window_shape, self.stride, self.img_size, self.classifier, self.n_train_files, self.n_test_files, self.samples_per_image, self.on_ratio, self.directory_input, self.directory_labels, self.membrane_edges,self.layers_3D, self.adaptive_histogram_equalization)
         read.generate_data()
         return True
 
@@ -63,12 +63,12 @@ class ConvNetClassifier(object):
     def get_config(self, custom_config_file):
         global_config = open("config/global.yaml")
         global_data_map = yaml.safe_load(global_config)
-        custom_config = open(custom_config_file)
+        custom_config = open("config/" + custom_config_file)
         custom_data_map = yaml.safe_load(custom_config)
         return global_data_map, custom_data_map
 
     def get_locals(self, global_data_map, custom_data_map):
-        for key in ["hyper-parameters", "image-data", "optimizer-data", "classifier", "weights_path"]:
+        for key in ["hyper-parameters", "image-data", "optimizer-data", "classifier", "weights_path", "pre-process"]:
             locals().update(global_data_map[key])
             if key in custom_data_map:
                 locals().update(custom_data_map[key])
@@ -90,8 +90,6 @@ class ConvNetClassifier(object):
         # load weights_path
         locals().update(global_data_map["weights_path"])
         self.path = global_data_map["weights_path"]
-        # load pre-process
-        locals().update(custom_data_map["pre-process"])
         
         for key, value in locals().iteritems():
             if key != "global_data_map":
@@ -126,7 +124,7 @@ class ConvNetClassifier(object):
         print 'Initializing neural network ...'
 
         # print error if batch size is to large
-        if valid_set_y.eval().size<batch_size:
+        if valid_set_y.eval().size<self.batch_size:
             print 'Error: Batch size is larger than size of validation set.'
 
         # compute batch sizes for train/test/validation
@@ -135,19 +133,19 @@ class ConvNetClassifier(object):
         n_valid_batches  = valid_set_x.get_value(borrow=True).shape[0]
         
         # adjust batch size
-        while n_test_batches % batch_size != 0:
-            batch_size += 1 
+        while n_test_batches % self.batch_size != 0:
+            self.batch_size += 1 
 
-        print 'Batch size: ',batch_size
-        n_train_batches /= batch_size
-        n_test_batches  /= batch_size
-        n_valid_batches /= batch_size
+        print 'Batch size: ',self.batch_size
+        n_train_batches /= self.batch_size
+        n_test_batches  /= self.batch_size
+        n_valid_batches /= self.batch_size
 
         # symbolic variables
         x       = T.matrix('x')        # input image data
         y       = T.matrix('y')        # input label data
         
-        cov_net = CovNet(rng, batch_size,self.layers_3D, num_kernels, kernel_sizes, x, y,self.in_window_shape,self.out_window_shape,self.classifier,maxoutsize = maxoutsize, params = self.params)
+        cov_net = CovNet(rng, self.batch_size, self.layers_3D, self.num_kernels, self.kernel_sizes, x, y,self.in_window_shape,self.out_window_shape,self.classifier,maxoutsize = self.maxoutsize, params = self.params)
 
         # Initialize parameters and functions
         cost        = cov_net.layer4.negative_log_likelihood(y,penatly_factor) # Cost function
@@ -174,8 +172,8 @@ class ConvNetClassifier(object):
                         cost,                                                       
                         updates = updates,                                          
                         givens  = {                                                 
-                                    x: train_set_x[perm[index * batch_size: (index + 1) * batch_size]], 
-                                    y: train_set_y[perm[index * batch_size: (index + 1) * batch_size]]
+                                    x: train_set_x[perm[index * self.batch_size: (index + 1) * self.batch_size]], 
+                                    y: train_set_y[perm[index * self.batch_size: (index + 1) * self.batch_size]]
             }                                                                   
         )
 
@@ -184,8 +182,8 @@ class ConvNetClassifier(object):
                         [index],
                         acc(y),
                         givens = {
-                                x: valid_set_x[index * batch_size: (index + 1) * batch_size],
-                                y: valid_set_y[index * batch_size: (index + 1) * batch_size]
+                                x: valid_set_x[index * self.batch_size: (index + 1) * self.batch_size],
+                                y: valid_set_y[index * self.batch_size: (index + 1) * self.batch_size]
                 }
             )
 
@@ -194,8 +192,8 @@ class ConvNetClassifier(object):
                     [index],
                     acc(y),
                     givens = {
-                            x: test_set_x[index * batch_size: (index + 1) * batch_size],
-                            y: test_set_y[index * batch_size: (index + 1) * batch_size]
+                            x: test_set_x[index * self.batch_size: (index + 1) * self.batch_size],
+                            y: test_set_y[index * self.batch_size: (index + 1) * self.batch_size]
             }
         )
 
@@ -211,7 +209,7 @@ class ConvNetClassifier(object):
             for epoch in range(epochs):
                 t1 = time.time()
                 perm              = srng.shuffle_row_elements(perm)
-                train_set_x,train_set_y = f.flip_rotate(train_set_x,train_set_y,self.in_window_shape,self.out_window_shape,perm,index,cost,updates,batch_size,x,y,self.classifier,self.layers_3D)
+                train_set_x,train_set_y = f.flip_rotate(train_set_x,train_set_y,self.in_window_shape,self.out_window_shape,perm,index,cost,updates,self.batch_size,x,y,self.classifier,self.layers_3D)
                 costs             = [train_model(i) for i in xrange(n_train_batches)]
                 validation_losses = [validate_model(i) for i in xrange(n_valid_batches)]
                 t2 = time.time()
@@ -243,7 +241,7 @@ class ConvNetClassifier(object):
         predict = theano.function(inputs=[index], 
                                     outputs=cov_net.layer4.prediction(),
                                     givens = {
-                                        x: test_set_x[index * batch_size: (index + 1) * batch_size]
+                                        x: test_set_x[index * self.batch_size: (index + 1) * self.batch_size]
                                         }
                                     )
                                     
@@ -282,13 +280,13 @@ class ConvNetClassifier(object):
         results[1] = np.array(val_results)
         results[2] = np.array(time_results)
 
-        table = np.load('pre_process/data_strucs/' + self.folder_name + '//table.npy')
-        output, y = post.post_process(train_set_x.get_value(borrow=True),train_set_y.get_value(borrow=True),output,test_set_y.get_value(borrow=True),table,self.img_size,self.in_window_shape,self.out_window_shape,classifier)
+        table = np.load('pre_process/data_strucs/' + self.folder_name + '/table.npy')
+        output, y = post.post_process(train_set_x.get_value(borrow=True),train_set_y.get_value(borrow=True),output,test_set_y.get_value(borrow=True),table,self.img_size,self.in_window_shape,self.out_window_shape,self.classifier)
 
         mean_abs_error = np.mean(np.abs(output-y))
         print 'Mean Absolute Error (after averaging): ', mean_abs_error
         
-        results_folder_name = folder_name + ' at ' + self.ID
+        results_folder_name = config_file + ' at ' + self.ID
         os.makedirs('results/' + results_folder_name)
         np.save('results/' + results_folder_name + '/results.npy', results)
         np.save('results/' + results_folder_name + '/output.npy', output)
@@ -296,7 +294,7 @@ class ConvNetClassifier(object):
         np.save('results/' + results_folder_name + '/y.npy', y)
 
 if __name__ == "__main__":
-    config_file = ("config/" + sys.argv[1]) if len(sys.argv) > 1 else "config/default.yaml"
+    config_file = sys.argv[1] if len(sys.argv) > 1 else "default.yaml"
     conv_net_classifier = ConvNetClassifier()
     conv_net_classifier.run(config_file)
 

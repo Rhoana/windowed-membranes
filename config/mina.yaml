@@ -11,7 +11,10 @@ convolution:
 classifier:
   classifier: 'synapse_reg'
   load_n_layers: 5
+pre-process:
+  adaptive_histogram_equalization: True
+  pre_process_only: True
 convolution:
-  size: "large"
+  size: "small"
 load-weights:
   load_n_layers: -1
