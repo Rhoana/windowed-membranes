@@ -1,8 +1,10 @@
 import sys
+import yaml
 import time as time
 import os
 import numpy as np
 import theano
+import theano.sandbox.cuda
 import theano.tensor as T
 from theano.tensor.shared_randomstreams import RandomStreams
 from util.build_train_test_set          import BuildTrainTestSet 
@@ -32,67 +34,25 @@ class ConvNetClassifier(object):
         cPickle.dump(obj, f, protocol=cPickle.HIGHEST_PROTOCOL)
         f.close()
 
-    def process_cmd_line_args(self,in_window_shape,out_window_shape,stride,img_size, classifier, n_train_files, n_test_files, samples_per_image, on_ratio, membrane_edges,layers_3D):
-        
-        if len(sys.argv) > 1 and ( "--small" in sys.argv):
-            num_kernels   = [10,10,10]
-            kernel_sizes  = [(5, 5), (3, 3), (3,3)]
-            maxoutsize    = (1,1,1)
-        elif len(sys.argv) > 1 and ( "--medium" in sys.argv):
-            num_kernels   = [64,64,64]
-            kernel_sizes  = [(5, 5), (3, 3), (3,3)]
-            maxoutsize    = (1,1,1)
-        elif len(sys.argv) > 1 and ( "--large" in sys.argv):
-            num_kernels   = [64,64,128]
-            kernel_sizes  = [(5, 5), (3, 3), (3,3)]
-            maxoutsize    = (2,2,4)
-
-        if '--synapse' in sys.argv:
-            classifier = 'synapse'
-        elif '--membrane' in sys.argv:
-            classifier = 'membrane'
-        elif '--synapse_reg' in sys.argv:
-            classifier = 'synapse_reg'
+    def load_layers(self, load_n_layers):
+        total_n_layers = 5
+        if os.path.isfile(self.path) == True:
+            params = self.load_params(self.path)
+            self.params = params
         else:
-            print 'Error: Invalid Classifier'
-            exit()
-
-        if classifier == 'membrane':
-            directory_input      = ['data/train-input']
-            directory_labels     = ['data/train-labels']
-        elif classifier in ['synapse','synapse_reg']:
-            directory_input      = ['data/train-input'] #,'data/AC3-input']
-            directory_labels     = ['data/train-labels'] #,'data/AC3-labels']
-
-        # path to store parameters        
-        if not os.path.exists('parameters'):
-            os.makedirs('parameters')
-
-        path = 'parameters/params.dat'
-        self.path = path
+            self.params = None
+        print 'Warning: Unable to load weights'
+        for n in xrange(load_n_layers,total_n_layers):
+            del self.params["W"+str(n)]
+            del self.params["b"+str(n)]
         
-        if "--load-weights" in sys.argv: 
-            total_n_layers = 5
-            
-            if os.path.isfile(path) == True:
-                params = self.load_params(path)
-                self.params = params
-            else:
-                self.params = None
-            print 'Warning: Unable to load weights'
+        return True
 
-            if sys.argv.index("--load-weights") + 1 < len(sys.argv):
-                load_n_layers = sys.argv[sys.argv.index("--load-weights") + 1]
-                for n in xrange(load_n_layers,total_n_layers):
-                    del self.params["W"+str(n)]
-                    del self.params["b"+str(n)]
-
-        if "--pre-process" in sys.argv:
-            print "Generating Train/Test Set..."
-            read = Read(in_window_shape, out_window_shape, stride, img_size, classifier, n_train_files, n_test_files, samples_per_image, on_ratio, directory_input, directory_labels, membrane_edges,layers_3D)
-            read.generate_data()
-
-        return num_kernels, kernel_sizes, maxoutsize, classifier
+    def generate_train_test_set(self):
+        print "Generating Train/Test Set..."
+        read = Read(self.in_window_shape, self.out_window_shape, self.stride, self.img_size, self.classifier, self.n_train_files, self.n_test_files, self.samples_per_image, self.on_ratio, self.directory_input, self.directory_labels, self.membrane_edges,self.layers_3D)
+        read.generate_data()
+        return True
 
     def get_params(self):
         params = {}
@@ -100,54 +60,65 @@ class ConvNetClassifier(object):
             params[param.name] = param.get_value()
         return params
 
-    def run(self):
+    def get_config(self, custom_config_file):
+        global_config = open("config/global.yaml")
+        global_data_map = yaml.safe_load(global_config)
+        custom_config = open(custom_config_file)
+        custom_data_map = yaml.safe_load(custom_config)
+        return global_data_map, custom_data_map
 
-        # Hyper-parameters 
-        batch_size       = 30
-        epochs           = 30
-        in_window_shape  = (64,64)
-        out_window_shape = (12,12)
-        penatly_factor   = 0.,
-        maxoutsize       = (1,1,1)
-        stride           = 12
+    def get_locals(self, global_data_map, custom_data_map):
+        for key in ["hyper-parameters", "image-data", "optimizer-data", "classifier", "weights_path"]:
+            locals().update(global_data_map[key])
+            if key in custom_data_map:
+                locals().update(custom_data_map[key])
 
-        # Image data
-        samples_per_image    = 400
-        n_validation_samples = 2000
-        on_ratio             = 0.5
-        img_size             = (1024,1024)
-        n_train_files        = None
-        n_test_files         = 10
-        layers_3D            = 3
+        for data_map in [global_data_map, custom_data_map]:
+            if 'theano' in data_map:
+                for key, value in data_map['theano']['config'].iteritems():
+                    if key == "device":
+                        theano.sandbox.cuda.use(value)
+                    else:
+                        setattr(theano.config, key, value)
 
+        # set convolution size
+        locals().update(global_data_map["convolution"][custom_data_map["convolution"]["size"]])
+        # set training data location
+        locals().update(global_data_map["convolution"]["training-data"][custom_data_map["classifier"]["classifier"]])
+        # load_n_layers  
+        locals().update(custom_data_map["load-weights"])
+        # load weights_path
+        locals().update(global_data_map["weights_path"])
+        self.path = global_data_map["weights_path"]
+        # load pre-process
+        locals().update(custom_data_map["pre-process"])
         
-        # Optimizer data
-        optimizer                      = 'RMSprop'
-        optimizerData                  = {}
-        optimizerData['learning_rate'] = 0.001
-        optimizerData['rho']           = 0.9
-        optimizerData['epsilon']       = 1e-4
+        for key, value in locals().iteritems():
+            if key != "global_data_map":
+                setattr(self, key, value)
+        return True
 
-        # Classifier: membrane/synapses
-        classifier     = 'membrane'
-        membrane_edges = 'WideEdges' #GaussianBlur/WideEdges 
+    def run(self, config_file):
+        global_data_map, custom_data_map = self.get_config(config_file)
+        self.get_locals(global_data_map, custom_data_map)
+ 
+        if self.pre_process:
+            self.generate_train_test_set()
+            if self.pre_process_only:
+                sys.exit(0)
 
-        # GLOBAL CONFIG
-        theano.config.floatX = 'float32'
+        if self.load_n_layers != -1:
+            self.load_layers(load_n_layers)
 
-        #Random
+         #Random
         rng              = np.random.RandomState(42)
         rngi             = np.random.RandomState(42)
         
-        
-        ##### PROCESS COMMAND-LINE ARGS #####
-        num_kernels, kernel_sizes, maxoutsize,classifier = self.process_cmd_line_args(in_window_shape,out_window_shape,stride,img_size, classifier, n_train_files, n_test_files, samples_per_image, on_ratio, membrane_edges,layers_3D)
-
         print 'Loading data ...'
 
         # load in and process data
-        preProcess              = BuildTrainTestSet(n_validation_samples)
-        data                    = preProcess.run(classifier)
+        preProcess              = BuildTrainTestSet(self.n_validation_samples)
+        data                    = preProcess.run(self.classifier)
         train_set_x,train_set_y = data[0],data[3]
         valid_set_x,valid_set_y = data[1],data[4]
         test_set_x,test_set_y   = data[2],data[5]
@@ -176,7 +147,7 @@ class ConvNetClassifier(object):
         x       = T.matrix('x')        # input image data
         y       = T.matrix('y')        # input label data
         
-        cov_net = CovNet(rng, batch_size,layers_3D, num_kernels, kernel_sizes, x, y,in_window_shape,out_window_shape,classifier,maxoutsize = maxoutsize, params = self.params)
+        cov_net = CovNet(rng, batch_size,self.layers_3D, num_kernels, kernel_sizes, x, y,self.in_window_shape,self.out_window_shape,self.classifier,maxoutsize = maxoutsize, params = self.params)
 
         # Initialize parameters and functions
         cost        = cov_net.layer4.negative_log_likelihood(y,penatly_factor) # Cost function
@@ -240,7 +211,7 @@ class ConvNetClassifier(object):
             for epoch in range(epochs):
                 t1 = time.time()
                 perm              = srng.shuffle_row_elements(perm)
-                train_set_x,train_set_y = f.flip_rotate(train_set_x,train_set_y,in_window_shape,out_window_shape,perm,index,cost,updates,batch_size,x,y,classifier,layers_3D)
+                train_set_x,train_set_y = f.flip_rotate(train_set_x,train_set_y,self.in_window_shape,self.out_window_shape,perm,index,cost,updates,batch_size,x,y,self.classifier,self.layers_3D)
                 costs             = [train_model(i) for i in xrange(n_train_batches)]
                 validation_losses = [validate_model(i) for i in xrange(n_valid_batches)]
                 t2 = time.time()
@@ -277,9 +248,9 @@ class ConvNetClassifier(object):
                                     )
                                     
         # Plot example of output
-        if classifier in ['membrane','synapse']:
-            output = np.zeros((0,out_window_shape[0]*out_window_shape[1]))
-        elif classifier == 'synapse_reg':
+        if self.classifier in ['membrane','synapse']:
+            output = np.zeros((0,self.out_window_shape[0]*self.out_window_shape[1]))
+        elif self.classifier == 'synapse_reg':
             output = np.zeros((0,1))
 
         start_test_timer = time.time()
@@ -297,11 +268,11 @@ class ConvNetClassifier(object):
         
         print 'Mean Absolute Error (before averaging): ',mean_abs_error
 
-        if classifier in ['membrane', 'synapse']:
-            in_shape = (output.shape[0],layers_3D,in_window_shape[0],in_window_shape[1])
-            out_shape = (output.shape[0],out_window_shape[0],out_window_shape[1])
-        elif classifier == 'synapse_reg':
-            in_shape = (output.shape[0],layers_3D,in_window_shape[0],in_window_shape[1])
+        if self.classifier in ['membrane', 'synapse']:
+            in_shape = (output.shape[0],self.layers_3D,self.in_window_shape[0],self.in_window_shape[1])
+            out_shape = (output.shape[0],self.out_window_shape[0],self.out_window_shape[1])
+        elif self.classifier == 'synapse_reg':
+            in_shape = (output.shape[0],self.layers_3D,self.in_window_shape[0],self.in_window_shape[1])
             out_shape = (output.shape[0],1)
 
         output = output.reshape(out_shape)
@@ -311,15 +282,8 @@ class ConvNetClassifier(object):
         results[1] = np.array(val_results)
         results[2] = np.array(time_results)
 
-        if classifier == 'synapse':
-            folder_name = 'synapse_pixels'
-        elif classifier == 'membrane':
-            folder_name = 'edges'
-        else:
-            folder_name = 'synapse_windows'
-
-        table = np.load('pre_process/data_strucs/' + folder_name + '//table.npy')
-        output, y = post.post_process(train_set_x.get_value(borrow=True),train_set_y.get_value(borrow=True),output,test_set_y.get_value(borrow=True),table,img_size,in_window_shape,out_window_shape,classifier)
+        table = np.load('pre_process/data_strucs/' + self.folder_name + '//table.npy')
+        output, y = post.post_process(train_set_x.get_value(borrow=True),train_set_y.get_value(borrow=True),output,test_set_y.get_value(borrow=True),table,self.img_size,self.in_window_shape,self.out_window_shape,classifier)
 
         mean_abs_error = np.mean(np.abs(output-y))
         print 'Mean Absolute Error (after averaging): ', mean_abs_error
@@ -332,7 +296,7 @@ class ConvNetClassifier(object):
         np.save('results/' + results_folder_name + '/y.npy', y)
 
 if __name__ == "__main__":
-    
-    classifier = ConvNetClassifier()
-    classifier.run()
+    config_file = ("config/" + sys.argv[1]) if len(sys.argv) > 1 else "config/default.yaml"
+    conv_net_classifier = ConvNetClassifier()
+    conv_net_classifier.run(config_file)
 

@@ -81,8 +81,9 @@ def save_roc_curve(actual_pixel_labels, predicted_pixel_labels):
 	plt.show()
 	return True
 
-BILATERAL_FILTERING = True
-actual_pixel_labels, predicted_pixel_labels = np.load("results/results/y.npy"), np.load("results/results/output.npy") 
+BILATERAL_FILTERING = False
+folder = "latest"
+actual_pixel_labels, predicted_pixel_labels = np.load("results/" + folder + "/y.npy"), np.load("results/" + folder + "/output.npy") 
 if BILATERAL_FILTERING:
 	predicted_pixel_labels = np.array([denoise_bilateral(im) for im in predicted_pixel_labels])
 save_random_images(actual_pixel_labels, predicted_pixel_labels, 3)

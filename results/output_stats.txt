@@ -1,10 +1,10 @@
-Probability threshold is 0.564954954955F1 score is 0.456226880395
-Jaccard similarity score is 0.986556927298
-ROC AUC score is 0.786140145463
+Probability threshold is 0.472792792793F1 score is 0.235517568851
+Jaccard similarity score is 0.984663161103
+ROC AUC score is 0.69534814553
 Full Classification Report:
                precision    recall  f1-score   support
 
-non-synapses       1.00      0.99      0.99     32487
-    synapses       0.38      0.58      0.46       318
+non-synapses       1.00      0.99      0.99     52180
+    synapses       0.17      0.40      0.24       308
 
- avg / total       0.99      0.99      0.99     32805
+ avg / total       0.99      0.98      0.99     52488
