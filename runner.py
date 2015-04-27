@@ -48,10 +48,10 @@ class ConvNetClassifier(object):
         
         return True
 
-    def generate_train_test_set(self):
+    def generate_train_test_set(self, config_file):
         print "Generating Train/Test Set..."
         read = Read(self.in_window_shape, self.out_window_shape, self.stride, self.img_size, self.classifier, self.n_train_files, self.n_test_files, self.samples_per_image, self.on_ratio, self.directory_input, self.directory_labels, self.membrane_edges,self.layers_3D, self.adaptive_histogram_equalization)
-        read.generate_data()
+        read.generate_data(config_file)
         return True
 
     def get_params(self):
@@ -92,7 +92,7 @@ class ConvNetClassifier(object):
         self.path = global_data_map["weights_path"]
         
         for key, value in locals().iteritems():
-            if key != "global_data_map":
+            if key not in ["global_data_map", "custom_data_map", "data_map", "self"]:
                 setattr(self, key, value)
         return True
 
@@ -101,7 +101,7 @@ class ConvNetClassifier(object):
         self.get_locals(global_data_map, custom_data_map)
  
         if self.pre_process:
-            self.generate_train_test_set()
+            self.generate_train_test_set(config_file)
             if self.pre_process_only:
                 sys.exit(0)
 
@@ -148,13 +148,13 @@ class ConvNetClassifier(object):
         cov_net = CovNet(rng, self.batch_size, self.layers_3D, self.num_kernels, self.kernel_sizes, x, y,self.in_window_shape,self.out_window_shape,self.classifier,maxoutsize = self.maxoutsize, params = self.params)
 
         # Initialize parameters and functions
-        cost        = cov_net.layer4.negative_log_likelihood(y,penatly_factor) # Cost function
+        cost        = cov_net.layer4.negative_log_likelihood(y,self.penalty_factor) # Cost function
         self.params = cov_net.params                                         # List of parameters
         grads       = T.grad(cost, self.params)                                   # Gradient
         index       = T.lscalar()                                            # Index
         
         # Intialize optimizer
-        updates = cov_net.init_optimizer(optimizer, cost, self.params, optimizerData)
+        updates = cov_net.init_optimizer(self.optimizer, cost, self.params, self.optimizerData)
 
         # Shuffling of rows for stochastic gradient
         srng = RandomStreams(seed=234)
@@ -280,13 +280,13 @@ class ConvNetClassifier(object):
         results[1] = np.array(val_results)
         results[2] = np.array(time_results)
 
-        table = np.load('pre_process/data_strucs/' + self.folder_name + '/table.npy')
+        table = np.load('pre_process/data_strucs/' + config_file + '/table.npy')
         output, y = post.post_process(train_set_x.get_value(borrow=True),train_set_y.get_value(borrow=True),output,test_set_y.get_value(borrow=True),table,self.img_size,self.in_window_shape,self.out_window_shape,self.classifier)
 
         mean_abs_error = np.mean(np.abs(output-y))
         print 'Mean Absolute Error (after averaging): ', mean_abs_error
         
-        results_folder_name = config_file + ' at ' + self.ID
+        results_folder_name = config_file# + ' at ' + self.ID
         os.makedirs('results/' + results_folder_name)
         np.save('results/' + results_folder_name + '/results.npy', results)
         np.save('results/' + results_folder_name + '/output.npy', output)

@@ -1,6 +1,6 @@
 hyper-parameters:
-  in_window_shape: [64,64]
-  out_window_shape: [12,12]
+  in_window_shape: [128,128]
+  out_window_shape: [5,5]
   stride: 6
 image-data:
   samples_per_image: 100
@@ -10,5 +10,6 @@ convolution:
   directory_labels: ['data/train-labels','data/AC3-labels']
 classifier:
   classifier: 'synapse_reg'
+  load_n_layers: 5
 load-weights:
   load_n_layers: -1

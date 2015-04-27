@@ -3,7 +3,7 @@ hyper-parameters:
   epochs: 30
   in_window_shape: [64,64]
   out_window_shape: [12,12]
-  penatly_factor: 0.
+  penalty_factor: 0.
   maxoutsize: [1,1,1]
   stride: 12
 image-data:

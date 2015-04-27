@@ -422,7 +422,7 @@ class Read(object):
         return img_samples,labels,table
 
     
-    def generate_data(self):
+    def generate_data(self, config_file):
 
         print('Loading images ...')
 
@@ -475,16 +475,12 @@ class Read(object):
                         train_x = np.vstack((train_x, x_temp))
                         train_y = np.append(train_y, y_temp)
 
-        # Define folder name to store pre-processed data
-        if self.classifier == 'synapse':
-            folder_name = 'synapse_pixels'
-        elif self.classifier == 'membrane':
-            folder_name = 'edges'
-        else:
-            folder_name = 'synapse_windows'
-            
-        np.save('pre_process/data_strucs/' + folder_name + '/x_train.npy',train_x)
-        np.save('pre_process/data_strucs/'  + folder_name + '/y_train.npy',train_y)
+        folder_name = 'pre_process/data_strucs/' + config_file
+        if not os.path.exists(folder_name):
+            os.makedirs(folder_name)
+        
+        np.save(folder_name + '/x_train.npy',train_x)
+        np.save(folder_name + '/y_train.npy',train_y)
 
         print "Finished train set"
 
@@ -516,9 +512,9 @@ class Read(object):
                 
                 img_number += 1
 
-        np.save('pre_process/data_strucs/' + folder_name + '/x_test.npy',test_x)
-        np.save('pre_process/data_strucs/' + folder_name + '/y_test.npy',test_y)
-        np.save('pre_process/data_strucs/' + folder_name + '/table.npy',table)
+        np.save(folder_name + '/x_test.npy',test_x)
+        np.save(folder_name + '/y_test.npy',test_y)
+        np.save(folder_name + '/table.npy',table)
         
         print 'Done ... '
 
