@@ -35,11 +35,12 @@ def plot_samples(n=0):
     ax1.set_title('Input Image')
     ax2.set_title('Labeled')
 
-def plot(n=0):
+def plot(adress = 'results/results/', n=0):
     n = int(n)
-    
-    y      = np.load('results/results/y.npy')
-    output = np.load('results/results/output.npy')
+   
+
+    y      = np.load(adress + '/y.npy')
+    output = np.load(adress + '/output.npy')
 
     print y.shape
     print output.shape
@@ -74,6 +75,8 @@ def results():
     plt.show()
 
 if __name__ == "__main__":
+
+    adress = '/Users/hallvardmoiannydal/Documents/Classes/AC297r/ac297r-deep-learning/results/edges at 2015-04-26 21:35:43'
     
 
     if "--results" in sys.argv:
@@ -90,5 +93,5 @@ if __name__ == "__main__":
             n = sys.argv[-1]
         else:
             n = 0
-        plot(n=n)
+        plot(adress = adress, n=n)
     plt.show()
