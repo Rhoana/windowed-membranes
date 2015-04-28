@@ -3,12 +3,12 @@ hyper-parameters:
   out_window_shape: [12,12]
   stride: 6
 image-data:
-  samples_per_image: 100
+  samples_per_image: 50
 convolution:
   size: large
-  directory_input: ['data/train-input','data/AC3-input']
-  directory_labels: ['data/train-labels','data/AC3-labels']
+  directory_input: ['data/train-input'] #,'data/AC3-input']
+  directory_labels: ['data/train-labels'] #,'data/AC3-labels']
 classifier:
-  classifier: 'synapse_reg'
+  classifier: "synapse_reg"
 load-weights:
   load_n_layers: -1

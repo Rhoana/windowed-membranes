@@ -11,7 +11,7 @@ image-data:
   n_validation_samples: 2000
   on_ratio: 0.5
   img_size: [1024,1024]
-  n_train_files: None
+  n_train_files: !!null "None"
   n_test_files: 10
   layers_3D: 3
 optimizer-data:

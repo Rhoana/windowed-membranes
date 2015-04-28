@@ -90,9 +90,9 @@ class Read(object):
 
         n_samples -= diff_samples
 
-        if self.layers_3D is 1:
+        if self.layers_3D == 1:
             index = np.array([0])
-        elif self.layers_3D is 3:
+        elif self.layers_3D == 3:
             index = np.array([-1,0,1])
         index += nn
 
@@ -152,9 +152,9 @@ class Read(object):
 
         n_samples -= diff_samples
 
-        if self.layers_3D is 1:
+        if self.layers_3D == 1:
             index = np.array([0])
-        elif self.layers_3D is 3:
+        elif self.layers_3D == 3:
             index = np.array([-1,0,1])
         index += nn
 
@@ -167,7 +167,7 @@ class Read(object):
         temp   = signal.convolve2d(temp, scharr, mode='valid')
         temp /= float(self.out_window_shape[0]**2)
 
-        if on_synapse is True:
+        if on_synapse == True:
             temp_x_samples,temp_y_samples = np.where(temp > on_synapse_threshold)
         else:
             temp_x_samples,temp_y_samples = np.where(temp < on_synapse_threshold)
@@ -249,14 +249,14 @@ class Read(object):
                 img_temp = Image.open(File)                                                        
                 flag = True                                                                     
                 i = 0                                                                         
-                while flag is True:                                                             
+                while flag == True:                                                             
                     try:            
                         img_temp.seek(i)
                         img_temp_temp = np.array(img_temp.getdata()).reshape(img_temp.size)
                         img_temp_temp.flags.writeable = True
-                        if self.classifier is 'membrane':
+                        if self.classifier == 'membrane':
                             img_temp_temp = self.find_edges(img_temp_temp)
-                        elif self.classifier is 'synapse' or self.classifier is 'synapse_reg':
+                        elif self.classifier == 'synapse' or self.classifier == 'synapse_reg':
                             img_temp_temp = self.find_synapse(img_temp_temp,File)
 
                         img_stack = np.vstack((img_stack,img_temp_temp.flatten(1)))           
@@ -264,6 +264,7 @@ class Read(object):
                     except EOFError:                                                            
                         flag = False   
 
+        
         total_files = img_stack.shape[0]
         if self.n_train_files == None:
             train_img_input  = img_real_stack[:(total_files-self.n_test_files)]
@@ -297,36 +298,37 @@ class Read(object):
 	
         return train_img_input,train_img_labels,test_img_input,test_img_labels,img_group_train,img_group_test
 
-    def process_images(self,train_img_output,train_img_labels):
+    def process_images(self,train_img_input,train_img_labels):
         labeled_in  = np.zeros(train_img_labels.shape)
         labeled_out = np.zeros(train_img_labels.shape)
 
         n = 0
         for n in range(train_img_labels.shape[0]):
 
-            if self.classifier is 'membrane':
+            if self.classifier == 'membrane':
                 labeled_in[n] = train_img_labels[n]
                 labeled_in[n] = labeled_in[n]/labeled_in[n].max()
 
-                if self.membrane_edges is 'WideEdges':
+                if self.membrane_edges == 'WideEdges':
                     labeled_out[n] = self.thick_edge(labeled_in[n])
 
-                elif self.membrane_edges is 'GaussianBlur':
+                elif self.membrane_edges == 'GaussianBlur':
                     labeled_out[n] = scipy.ndimage.gaussian_filter(labeled_in[n], sigma=self.sigma)
                     labeled_out[n] = labeled_out[n]/labeled_out[n].max()
                 else:
                     labeled_out[n] = labeled_in[n]
                     print "Warning: thin edge"
 
-            elif self.classifier is 'synapse':
+            elif self.classifier == 'synapse':
                 labeled_in[n],labeled_out[n] = train_img_labels[n],train_img_labels[n]
 
-            elif self.classifier is 'synapse_reg':
+            elif self.classifier == 'synapse_reg':
                 labeled_in[n],labeled_out[n] = train_img_labels[n],train_img_labels[n]
 
             if self.adaptive_histogram_equalization:
                 # Adaptive Equalization
-                train_img_input[n] = exposure.equalize_adapthist(train_img_input[n], clip_limit=0.03)
+                pass
+                #train_img_input[n] = exposure.equalize_adapthist(train_img_input[n], clip_limit=0.03)
 
         return labeled_in,labeled_out,train_img_input
 
@@ -447,7 +449,7 @@ class Read(object):
             train_x = np.zeros((0,self.layers_3D*self.in_window_shape[0]**2))
             train_y = np.zeros((0,self.out_window_shape[0]**2))
             sample_function = self.sample_membrane_synapse
-        elif self.classifier is 'synapse_reg':
+        elif self.classifier == 'synapse_reg':
             train_x = np.zeros((0,self.layers_3D*self.in_window_shape[0]**2))
             train_y = np.zeros((0,1))
             sample_function = self.sample_synapse_reg
@@ -492,7 +494,7 @@ class Read(object):
             test_x = np.zeros((0,self.layers_3D*self.in_window_shape[0]**2))
             test_y = np.zeros((0,self.out_window_shape[0]**2))
             generate_test_set = self.generate_test_membrane_synapse
-        elif self.classifier is 'synapse_reg':
+        elif self.classifier == 'synapse_reg':
             test_x = np.zeros((0,self.layers_3D*self.in_window_shape[0]**2))
             test_y = np.zeros((0,1))
             generate_test_set = self.generate_test_synapse_reg
