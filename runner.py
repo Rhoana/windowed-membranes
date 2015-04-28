@@ -106,7 +106,7 @@ class ConvNetClassifier(object):
                 sys.exit(0)
 
         if self.load_n_layers != -1:
-            self.load_layers(load_n_layers)
+            self.load_layers(self.load_n_layers)
 
         #QUICK-FIX
         self.num_kernels  = (self.num_kernels[0],self.num_kernels[1],self.num_kernels[2])

@@ -12,3 +12,5 @@ classifier:
   classifier: "synapse_reg"
 load-weights:
   load_n_layers: -1
+pre-process:
+    pre_process: !!bool True
