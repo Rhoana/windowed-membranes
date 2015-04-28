@@ -10,7 +10,6 @@ import matplotlib.pyplot as plt
 from scipy import misc
 from skimage import exposure
 from PIL import Image 
-import mahotas as mh
 
 class Read(object):
 
@@ -331,9 +330,7 @@ class Read(object):
                 labeled_in[n],labeled_out[n] = train_img_labels[n],train_img_labels[n]
 
             if self.adaptive_histogram_equalization:
-                # Adaptive Equalization
-                pass
-                #train_img_input[n] = exposure.equalize_adapthist(train_img_input[n], clip_limit=0.03)
+                train_img_input[n] = exposure.equalize_adapthist(train_img_input[n], clip_limit=0.03)
 
         return labeled_in,labeled_out,train_img_input
 
