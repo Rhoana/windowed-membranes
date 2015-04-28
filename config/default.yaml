@@ -6,9 +6,11 @@ image-data:
   samples_per_image: 50
 convolution:
   size: large
-  directory_input: ['data/train-input'] #,'data/AC3-input']
-  directory_labels: ['data/train-labels'] #,'data/AC3-labels']
+  directory_input:  ['data/AC3-input']  #['data/train-input']
+  directory_labels: ['data/AC3-labels'] #['data/train-labels']
 classifier:
   classifier: "synapse_reg"
 load-weights:
   load_n_layers: -1
+pre-process:
+    pre_process: !!bool False

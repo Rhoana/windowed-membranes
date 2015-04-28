@@ -11,29 +11,18 @@ class BuildTrainTestSet(object):
     def __init__(self,n_val_samples):
         self.n_val_samples = n_val_samples
     
-    def run(self, classifier):
+    def run(self, classifier,config_file):
         
-        if classifier == 'synapse':
-            folder_name = 'synapse_pixels'
-        elif classifier == 'membrane':
-            folder_name = 'edges'
-        else:
-            folder_name = 'synapse_windows'
 
         # Load training and test set 
-        train_set_x = np.load('pre_process/data_strucs/' + folder_name + '/x_train.npy')
-        train_set_y = np.load('pre_process/data_strucs/' + folder_name + '/y_train.npy')
-        test_set_x  = np.load('pre_process/data_strucs/' + folder_name + '/x_test.npy')
-        test_set_y  = np.load('pre_process/data_strucs/' + folder_name + '/y_test.npy')
+        train_set_x = np.load('pre_process/data_strucs/' + config_file + '/x_train.npy')
+        train_set_y = np.load('pre_process/data_strucs/' + config_file + '/y_train.npy')
+        test_set_x  = np.load('pre_process/data_strucs/' + config_file + '/x_test.npy')
+        test_set_y  = np.load('pre_process/data_strucs/' + config_file + '/y_test.npy')
 
         if train_set_y.ndim != 2 or test_set_y.ndim != 2:
             train_set_y = train_set_y.reshape(train_set_y.shape[0],1)
             test_set_y  = test_set_y.reshape(test_set_y.shape[0],1)
-
-        print train_set_x.shape
-        print test_set_x.shape
-        print train_set_y.shape
-        print test_set_y.shape
 
         valid_set_size = self.n_val_samples
         

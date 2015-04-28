@@ -108,6 +108,11 @@ class ConvNetClassifier(object):
         if self.load_n_layers != -1:
             self.load_layers(load_n_layers)
 
+        #QUICK-FIX
+        self.num_kernels  = (self.num_kernels[0],self.num_kernels[1],self.num_kernels[2])
+        self.kernel_sizes = ((self.kernel_sizes[0][0],self.kernel_sizes[0][1]),(self.kernel_sizes[1][0],self.kernel_sizes[1][1]),(self.kernel_sizes[2][0],self.kernel_sizes[2][1]))
+        self.maxoutsize = (self.maxoutsize[0],self.maxoutsize[1],self.maxoutsize[2])
+
          #Random
         rng              = np.random.RandomState(42)
         rngi             = np.random.RandomState(42)
@@ -116,7 +121,7 @@ class ConvNetClassifier(object):
 
         # load in and process data
         preProcess              = BuildTrainTestSet(self.n_validation_samples)
-        data                    = preProcess.run(self.classifier)
+        data                    = preProcess.run(self.classifier,config_file)
         train_set_x,train_set_y = data[0],data[3]
         valid_set_x,valid_set_y = data[1],data[4]
         test_set_x,test_set_y   = data[2],data[5]
@@ -206,7 +211,7 @@ class ConvNetClassifier(object):
         try:
             print '... Solving'
             start_time = time.time()    
-            for epoch in range(epochs):
+            for epoch in range(self.epochs):
                 t1 = time.time()
                 perm              = srng.shuffle_row_elements(perm)
                 train_set_x,train_set_y = f.flip_rotate(train_set_x,train_set_y,self.in_window_shape,self.out_window_shape,perm,index,cost,updates,self.batch_size,x,y,self.classifier,self.layers_3D)

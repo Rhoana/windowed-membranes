@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 from scipy import misc
 from skimage import exposure
 from PIL import Image 
+import mahotas as mh
 
 class Read(object):
 
@@ -222,9 +223,13 @@ class Read(object):
         image_groups = [0]
         counter = 0
         for directory in directory_input:
-            files_input = sorted(glob.glob(directory+"/*.tif"))
+            files_input = sorted(glob.glob(directory+"/*.tif"))[:10]
         
             for File in files_input:
+
+                img_temp = mh.imread(File)
+                print img_temp.shape
+                exit()
                 
                 img_temp = Image.open(File)                                                        
                 flag = True                                                                     
@@ -244,7 +249,7 @@ class Read(object):
         img_stack = np.zeros((0,self.img_size[0]**2))
 	
         for directory in directory_labels:
-            files_labels = sorted(glob.glob(directory+"/*.tif"))
+            files_labels = sorted(glob.glob(directory+"/*.tif"))[:10]
             for File in files_labels:
                 img_temp = Image.open(File)                                                        
                 flag = True                                                                     
