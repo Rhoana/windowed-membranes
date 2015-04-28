@@ -226,10 +226,6 @@ class Read(object):
         
             for File in files_input:
 
-                img_temp = mh.imread(File)
-                print img_temp.shape
-                exit()
-                
                 img_temp = Image.open(File)                                                        
                 flag = True                                                                     
                 i = 0                                                                           
