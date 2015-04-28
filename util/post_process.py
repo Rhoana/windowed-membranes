@@ -5,7 +5,7 @@ import sys
 
 def post_process(x_train,y_train,output,y,table,img_shape,in_window_shape,out_window_shape,classifier,n_train_examples = 100):
     
-    if classifier is 'synapse_reg':
+    if classifier == 'synapse_reg':
         
         diff = in_window_shape[0]-out_window_shape[0]    
 
@@ -18,7 +18,7 @@ def post_process(x_train,y_train,output,y,table,img_shape,in_window_shape,out_wi
             y_whole[table[i,0],int(table[i,1]),int(table[i,2])]      = y[i]
             output_whole[table[i,0],int(table[i,1]),int(table[i,2])] = output[i]
 
-    elif classifier in ['membrane','synapse']:
+    elif classifier == ['membrane','synapse']:
         diff = in_window_shape[0]-out_window_shape[0]    
 
         y      = y.reshape(y.shape[0],out_window_shape[0],out_window_shape[1])  
