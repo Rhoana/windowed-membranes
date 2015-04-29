@@ -254,6 +254,8 @@ class Read(object):
                         img_temp.seek(i)
                         img_temp_temp = np.array(img_temp.getdata()).reshape(img_temp.size)
                         img_temp_temp.flags.writeable = True
+                        if self.adaptive_histogram_equalization:
+                            img_temp_temp = exposure.equalize_adapthist(img_temp_temp, clip_limit=0.03)
                         if self.classifier == 'membrane':
                             img_temp_temp = self.find_edges(img_temp_temp)
                         elif self.classifier == 'synapse' or self.classifier == 'synapse_reg':
@@ -324,9 +326,6 @@ class Read(object):
 
             elif self.classifier == 'synapse_reg':
                 labeled_in[n],labeled_out[n] = train_img_labels[n],train_img_labels[n]
-
-            if self.adaptive_histogram_equalization:
-                train_img_input[n] = exposure.equalize_adapthist(train_img_input[n], clip_limit=0.03)
 
         return labeled_in,labeled_out,train_img_input
 

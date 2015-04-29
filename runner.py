@@ -99,7 +99,6 @@ class ConvNetClassifier(object):
         global_data_map, custom_data_map = self.get_config(config_file)
         self.get_locals(global_data_map, custom_data_map)
     
-        print self.path
         if self.pre_process:
             self.generate_train_test_set(config_file)
             if self.pre_process_only:
