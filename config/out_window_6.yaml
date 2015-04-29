@@ -1,6 +1,6 @@
 hyper-parameters:
-  in_window_shape: [128,128]
-  out_window_shape: [5,5]
+  in_window_shape: [64,64]
+  out_window_shape: [6,6]
   stride: 6
 image-data:
   samples_per_image: 100
