@@ -255,6 +255,7 @@ class Read(object):
                         img_temp_temp = np.array(img_temp.getdata()).reshape(img_temp.size)
                         img_temp_temp.flags.writeable = True
                         if self.adaptive_histogram_equalization:
+                            img_temp_temp = np.array(img_temp.getdata(), dtype=np.uint16).reshape(img_temp.size)
                             img_temp_temp = exposure.equalize_adapthist(img_temp_temp, clip_limit=0.03)
                         if self.classifier == 'membrane':
                             img_temp_temp = self.find_edges(img_temp_temp)
