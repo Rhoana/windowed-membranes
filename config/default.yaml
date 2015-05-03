@@ -15,5 +15,10 @@ classifier:
   classifier: "membrane"
 load-weights:
   load_n_layers: -1
+<<<<<<< HEAD
 main:
     ID_folder: test
+=======
+pre-process:
+    pre_process: !!bool True
+>>>>>>> 8551c69399b72a8c7005449f7d94ce78db48600d

@@ -38,13 +38,12 @@ class ConvNetClassifier(object):
         if os.path.isfile(self.path) == True:
             params = self.load_params(self.path)
             self.params = params
+            for n in xrange(load_n_layers,total_n_layers):
+                del self.params["W"+str(n)]
+                del self.params["b"+str(n)]
         else:
             self.params = None
-        print 'Warning: Unable to load weights'
-        for n in xrange(load_n_layers,total_n_layers):
-            del self.params["W"+str(n)]
-            del self.params["b"+str(n)]
-        
+            print 'Warning: Unable to load weights'
         return True
 
     def generate_train_test_set(self, config_file):
@@ -98,6 +97,7 @@ class ConvNetClassifier(object):
     def init(self,config_file):
         global_data_map, custom_data_map = self.get_config(config_file)
         self.get_locals(global_data_map, custom_data_map)
+<<<<<<< HEAD
 
         self.define_folders()
 
@@ -139,13 +139,16 @@ class ConvNetClassifier(object):
 
     def run(self):
 
+=======
+    
+>>>>>>> 8551c69399b72a8c7005449f7d94ce78db48600d
         if self.pre_process:
             self.generate_train_test_set(config_file)
             if self.pre_process_only:
                 sys.exit(0)
 
         if self.load_n_layers != -1:
-            self.load_layers(load_n_layers)
+            self.load_layers(self.load_n_layers)
 
          #Random
         rng              = np.random.RandomState(42)
