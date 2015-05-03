@@ -18,7 +18,7 @@ def post_process(x_train,y_train,output,y,table,img_shape,in_window_shape,out_wi
             y_whole[table[i,0],int(table[i,1]),int(table[i,2])]      = y[i]
             output_whole[table[i,0],int(table[i,1]),int(table[i,2])] = output[i]
 
-    elif classifier == ['membrane','synapse']:
+    elif classifier in ['membrane','synapse']:
         diff = in_window_shape[0]-out_window_shape[0]    
 
         y      = y.reshape(y.shape[0],out_window_shape[0],out_window_shape[1])  
@@ -39,11 +39,6 @@ def post_process(x_train,y_train,output,y,table,img_shape,in_window_shape,out_wi
 
         y_whole      /= count
         output_whole /= count
-
-
-    rand = np.random.permutation(range(x_train.shape[0]))[:n_train_examples]
-    np.save('results/x_train_examples.npy',x_train[rand])
-    np.save('results/y_train_examples.npy',y_train[rand])
 
     return output_whole, y_whole
     

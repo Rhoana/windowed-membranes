@@ -4,7 +4,6 @@ hyper-parameters:
   in_window_shape: [64,64]
   out_window_shape: [12,12]
   penalty_factor: 0.
-  maxoutsize: [1,1,1]
   stride: 12
 image-data:
   samples_per_image: 400
@@ -12,7 +11,7 @@ image-data:
   on_ratio: 0.5
   img_size: [1024,1024]
   n_train_files: !!null "None"
-  n_test_files: 10
+  n_test_files: 3
   layers_3D: 3
 optimizer-data:
   optimizer: 'RMSprop'
@@ -45,7 +44,7 @@ convolution:
   training-data:
     membrane:
       directory_input: ['data/train-input']
-      directory_labels: ['data/train-input']
+      directory_labels: ['data/train-labels']
       folder_name: 'edges'
     synapse:
       directory_input: ['data/train-input','data/AC3-input']
@@ -61,3 +60,8 @@ pre-process:
   adaptive_histogram_equalization: !!bool False
   pre_process_only: !!bool False
   pre_process: !!bool True
+main:
+    predict_only: !!bool False
+    predict_train_set: !!bool False
+    images_from_numpy: !!bool False
+    ID_folder: test

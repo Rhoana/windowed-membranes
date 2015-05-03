@@ -76,8 +76,11 @@ def results():
 
 if __name__ == "__main__":
 
-    adress = '/Users/hallvardmoiannydal/Documents/Classes/AC297r/ac297r-deep-learning/results/edges at 2015-04-26 21:35:43'
-    
+    latest_res = open('latest_run.txt','r')
+    adress = latest_res.readlines()
+    latest_res.close()
+    adress = adress[0].split('\n')[0]
+    adress = str(adress) + "/results"
 
     if "--results" in sys.argv:
         results()

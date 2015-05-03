@@ -1,6 +1,6 @@
 hyper-parameters:
   batch_size: 30
-  epochs: 30
+  epochs: 20
   in_window_shape: [64,64]
   out_window_shape: [12,12]
   penalty_factor: 0.

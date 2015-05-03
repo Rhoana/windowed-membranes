@@ -8,17 +8,17 @@ rng = np.random.RandomState(42)
 
 class BuildTrainTestSet(object):
 
-    def __init__(self,n_val_samples):
+    def __init__(self,n_val_samples,pre_processed_folder):
         self.n_val_samples = n_val_samples
+        self.pre_processed_folder = pre_processed_folder
     
     def run(self, classifier,config_file):
         
-
         # Load training and test set 
-        train_set_x = np.load('pre_process/data_strucs/' + config_file + '/x_train.npy')
-        train_set_y = np.load('pre_process/data_strucs/' + config_file + '/y_train.npy')
-        test_set_x  = np.load('pre_process/data_strucs/' + config_file + '/x_test.npy')
-        test_set_y  = np.load('pre_process/data_strucs/' + config_file + '/y_test.npy')
+        train_set_x = np.load(self.pre_processed_folder + 'x_train.npy')
+        train_set_y = np.load(self.pre_processed_folder + 'y_train.npy')
+        test_set_x  = np.load(self.pre_processed_folder + 'x_test.npy')
+        test_set_y  = np.load(self.pre_processed_folder + 'y_test.npy')
 
         if train_set_y.ndim != 2 or test_set_y.ndim != 2:
             train_set_y = train_set_y.reshape(train_set_y.shape[0],1)
@@ -35,15 +35,6 @@ class BuildTrainTestSet(object):
             valid_set_x[n] = test_set_x[rand_val[n]]
             valid_set_y[n] = test_set_y[rand_val[n]]
 
-        # Flip a number of the training data
-        flip_prob = 0.5
-        number_flips = np.int(np.floor(train_set_x.shape[0]*flip_prob))
-        rand = np.random.permutation(range(train_set_x.shape[0]))[:number_flips]
-        
-        for n in xrange(rand.size):
-            train_set_x[rand[n]] = train_set_x[rand[n],::-1]
-            train_set_y[rand[n]] = train_set_y[rand[n],::-1]
-            
         # estimate the mean and std dev from the training data
         # then use these estimates to normalize the data
         # estimate the mean and std dev from the training data

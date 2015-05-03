@@ -4,11 +4,11 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy import ndimage
 
-affine = True
+affine = False
 
-directory_input = 'train-input'
+directory_input = 'AC3-input'
 files_input = sorted(glob.glob(directory_input+"/*.tif"))
-directory_labels = 'train-labels'
+directory_labels = 'AC3-labels'
 files_labels = sorted(glob.glob(directory_labels+"/*.tif"))
 
 n = -1
@@ -18,20 +18,25 @@ img_real = cv2.imread(files_input[n],cv2.IMREAD_UNCHANGED)
 value1 = 100
 value2 = 300
 
-threshold = 399
+threshold = 0
 print 'threshold = ',threshold
 
-for n in xrange(img.shape[0]):
-    for m in xrange(img.shape[1]):
-        if img[n,m] > threshold:
-            img[n,m] = 1
-        elif img[n,m] == 0:
-            img[n,m] = 0
-        else:
-            img[n,m] = 0
+#for n in xrange(img.shape[0]):
+#    for m in xrange(img.shape[1]):
+#        if img[n,m] > threshold:
+#            img[n,m] = 1
+#        elif img[n,m] == 0:
+#            img[n,m] = 0
+#        else:
+#            img[n,m] = 0
 
-img_real += 1
-rows,cols = img_real.shape
+plt.figure()
+plt.imshow(img_real)
+
+plt.figure()
+plt.imshow(img)
+plt.show()
+exit()
 
 if affine == True:
     pts1 = np.float32([[50,50],[200,50],[50,200]])
