@@ -14,24 +14,11 @@ class BuildTrainTestSet(object):
     
     def run(self, classifier,config_file):
         
-<<<<<<< HEAD
         # Load training and test set 
         train_set_x = np.load(self.pre_processed_folder + 'x_train.npy')
         train_set_y = np.load(self.pre_processed_folder + 'y_train.npy')
         test_set_x  = np.load(self.pre_processed_folder + 'x_test.npy')
         test_set_y  = np.load(self.pre_processed_folder + 'y_test.npy')
-=======
-
-        folder_name = 'pre_process/data_strucs/' + config_file
-        if not os.path.exists(folder_name):
-            print "You must must pre-process this configuration first."
-
-        # Load training and test set 
-        train_set_x = np.load(folder_name + '/x_train.npy')
-        train_set_y = np.load(folder_name + '/y_train.npy')
-        test_set_x  = np.load(folder_name + '/x_test.npy')
-        test_set_y  = np.load(folder_name + '/y_test.npy')
->>>>>>> 8551c69399b72a8c7005449f7d94ce78db48600d
 
         if train_set_y.ndim != 2 or test_set_y.ndim != 2:
             train_set_y = train_set_y.reshape(train_set_y.shape[0],1)

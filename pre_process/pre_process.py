@@ -32,8 +32,6 @@ class Read(object):
         self.predict_train_set = predict_train_set
         self.images_from_numpy = images_from_numpy
 
-<<<<<<< HEAD
-=======
     def find_edges(self,img):
 
         threshold = 399
@@ -418,8 +416,6 @@ class Read(object):
 
         return img_samples,labels,table
 
-    
->>>>>>> 8551c69399b72a8c7005449f7d94ce78db48600d
     def generate_data(self, config_file):
 
         print('Loading images ...')

@@ -97,8 +97,6 @@ class ConvNetClassifier(object):
     def init(self,config_file):
         global_data_map, custom_data_map = self.get_config(config_file)
         self.get_locals(global_data_map, custom_data_map)
-<<<<<<< HEAD
-
         self.define_folders()
 
         #QUICK-FIX
@@ -139,9 +137,6 @@ class ConvNetClassifier(object):
 
     def run(self):
 
-=======
-    
->>>>>>> 8551c69399b72a8c7005449f7d94ce78db48600d
         if self.pre_process:
             self.generate_train_test_set(config_file)
             if self.pre_process_only:
@@ -343,4 +338,3 @@ if __name__ == "__main__":
     conv_net_classifier = ConvNetClassifier()
     conv_net_classifier.init(config_file)
     conv_net_classifier.run()
-
