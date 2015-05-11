@@ -18,7 +18,7 @@ Clone repository:
 
 `git clone https://github.com/Rhoana/windowed-prediction.git`
 
-### How to run (default settings)
+### Run (default settings)
 1. Place training data in `data`-folder. Data can be downloaded from [Google Drive](https://drive.google.com/drive/u/1/folders/0B016PpcCQHuVfmdYSEdxSGVHdDNuenJyQjdZdkRkUXVOamFzSEpua0hfSzNQX0xSLXpaMFU?ltmpl=drive).
 2. Specify data-folders in `config/global.yaml`
 3. Run default configuration: `python runner.py`
