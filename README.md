@@ -33,7 +33,7 @@ By default, the custom config-file is defined as `data/default.yaml`. You can de
 
 ### Documentation
 
-For documentation, visit the [Wiki](https://github.com/Rhoana/windowed-prediction/wiki).
+Further documentation can be found [here](https://github.com/Rhoana/windowed-prediction/wiki) (under progress).
 
 ### Contact
 
