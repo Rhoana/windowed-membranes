@@ -15,10 +15,15 @@ class BuildTrainTestSet(object):
     def run(self, classifier,config_file):
         
         # Load training and test set 
-        train_set_x = np.load(self.pre_processed_folder + 'x_train.npy')
-        train_set_y = np.load(self.pre_processed_folder + 'y_train.npy')
-        test_set_x  = np.load(self.pre_processed_folder + 'x_test.npy')
-        test_set_y  = np.load(self.pre_processed_folder + 'y_test.npy')
+
+        try:
+            train_set_x = np.load(self.pre_processed_folder + 'x_train.npy')
+            train_set_y = np.load(self.pre_processed_folder + 'y_train.npy')
+            test_set_x  = np.load(self.pre_processed_folder + 'x_test.npy')
+            test_set_y  = np.load(self.pre_processed_folder + 'y_test.npy')
+        except:
+            print "Error: Unable to load pre-processed train/test set."
+            exit()
 
         if train_set_y.ndim != 2 or test_set_y.ndim != 2:
             train_set_y = train_set_y.reshape(train_set_y.shape[0],1)

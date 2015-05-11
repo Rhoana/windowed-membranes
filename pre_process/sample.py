@@ -1,7 +1,6 @@
 import numpy as np
 import random
 import mahotas as mh
-import matplotlib.pyplot as plt
 import os
 
 class Sample(object):

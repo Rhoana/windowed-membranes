@@ -10,46 +10,51 @@ class LogisticRegression(object):
     Logistic regression class
     """
 
-    def __init__(self, input, n_in, n_out, out_window_shape, classes = 2, params = {}, params_number = None, classifier = 'standard'):
+    def __init__(self, input, n_in, n_out, out_window_shape, classes = 2, W = None, b = None,
+            params = {}, params_number = None, classifier = 'standard'):
 
         self.out_window_shape = out_window_shape
         self.classifier = classifier
 
-        W_name = "W" + str(params_number)                                         
-        b_name = "b" + str(params_number)                                         
-                                                                                
-        if params.has_key(W_name) and params.has_key(b_name):  
-            self.W = theano.shared(
-                    params[W_name],
-                name= W_name,
-                borrow=True
-            )
-            # Initialize biases
-            self.b = theano.shared(
-                params[b_name],
-                name= b_name,
-                borrow=True
-            )
+        if W == None or b == None:
+            W_name = "W" + str(params_number)                                         
+            b_name = "b" + str(params_number)                                         
+                                                                                    
+            if params.has_key(W_name) and params.has_key(b_name):  
+                W = theano.shared(
+                        params[W_name],
+                    name= W_name,
+                    borrow=True
+                )
+                # Initialize biases
+                b = theano.shared(
+                    params[b_name],
+                    name= b_name,
+                    borrow=True
+                )
 
-        else:
-            # Initialize weights
-            self.W = theano.shared(
-                value=numpy.zeros(
-                    (n_in, n_out),
-                    dtype=theano.config.floatX
-                ),
-                name=W_name,
-                borrow=True
-            )
-            # Initialize biases
-            self.b = theano.shared(
-                value=numpy.zeros(
-                    (n_out),
-                    dtype=theano.config.floatX
-                ),
-                name=b_name,
-                borrow=True
-            )
+            else:
+                # Initialize weights
+                W = theano.shared(
+                    value=numpy.zeros(
+                        (n_in, n_out),
+                        dtype=theano.config.floatX
+                    ),
+                    name=W_name,
+                    borrow=True
+                )
+                # Initialize biases
+                b = theano.shared(
+                    value=numpy.zeros(
+                        (n_out),
+                        dtype=theano.config.floatX
+                    ),
+                    name=b_name,
+                    borrow=True
+                )
+
+        self.W = W
+        self.b = b
         
         self.p_y_given_x = T.nnet.sigmoid(T.dot(input, self.W) + self.b)
 
@@ -87,3 +92,8 @@ class LogisticRegression(object):
         Output prediction
         '''
         return self.p_y_given_x
+
+    def TestVersion(self,input, n_in, n_out, out_window_shape, classes = 2, W = None, b = None,
+            params = {}, params_number = None, classifier = 'standard'):
+        return LogisticRegression(input, n_in, n_out, out_window_shape, classes = classes, W = self.W, b = self.b,
+            params = params, params_number = params_number, classifier = classifier)

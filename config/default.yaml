@@ -7,9 +7,9 @@ hyper-parameters:
   stride: 12
   layers_3D: 1
 image-data:
-  samples_per_image: 200
+  samples_per_image: 1000
   n_test_files: 3 
-  pre_process: !!bool False
+  pre_process: !!bool True
 network:
   size: small
 classifier:

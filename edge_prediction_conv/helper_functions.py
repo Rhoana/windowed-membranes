@@ -106,7 +106,6 @@ class Functions(object):
 
             random_matrix[n] = temp
                                                                     
-        print 'Maximum condition number: ',max_cond, count
         return random_matrix
     
     def dropout(self,X,p=0.5):

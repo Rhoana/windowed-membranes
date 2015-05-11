@@ -1,5 +1,3 @@
-import matplotlib.pyplot as plt
-from matplotlib.patches import Rectangle
 import numpy as np
 import sys
 
