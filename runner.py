@@ -20,6 +20,10 @@ class ConvNetClassifier(object):
     def __init__(self,params = {}):
         self.params = params
 
+        if not os.path.exists("parameters"):
+            os.makedirs("parameters")
+
+
     # --------------------------------------------------------------------------
     def load_params(self, path):
         f = file(path, 'r')
