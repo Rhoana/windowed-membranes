@@ -25,7 +25,11 @@ Clone repository:
 4. Plot latest run: `python plot.py`
 
 ### Config file
-There are two main config files. Global settings are defined in `data/global.yaml` and custom settings is defined in a separate config-file. By default, this custom config-file is `data/default.yaml`. You can define your own custom config file `data/custom_config.yaml` and run it by `python runner.py custom_config.yaml`. Note that settings defined in the custom config-file will overide the settings in the global config-file.
+There are two main config files:
+* Global settings are defined in `data/global.yaml` 
+* Custom settings are defined in a separate config-file. 
+ 
+By default, the custom config-file is defined as `data/default.yaml`. You can define your own custom config-file `data/custom_config.yaml` and run it: `python runner.py custom_config.yaml`. Note that settings defined in the custom config-file will overide the settings in the global config-file.
 
 ### Documentation
 
