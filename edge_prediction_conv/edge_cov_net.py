@@ -54,7 +54,7 @@ class CovNet(Functions):
         self.layer2_input_size  = self.layer1_output_size                              # Input size Layer 1
         self.edge2              = (self.edge1 - kernel_sizes[2][0] + 1)          # New edge size
         self.layer2_output_size = (batch_size, num_kernels[2]/maxoutsize[2], self.edge2, self.edge2) # Output size
-        assert (self.edge1 - kernel_sizes[2][0] + 1) == 0                        # Check pooling size
+        #assert (self.edge1 - kernel_sizes[2][0] + 1) == 0                        # Check pooling size
 
         # Initialize Layer 2
         self.layer2 = PoolLayer(rng,
