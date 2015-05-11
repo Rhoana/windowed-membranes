@@ -1,1 +1,1 @@
-run_data/membrane_12x12
+run_data/test

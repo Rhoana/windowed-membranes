@@ -62,7 +62,7 @@ class CovNet(Functions):
                                     image_shape=self.layer2_input_size,
                                     subsample= (1,1),
                                     filter_shape=(num_kernels[2], num_kernels[1]/maxoutsize[1]) + kernel_sizes[2],
-                                    poolsize=(2, 2),
+                                    poolsize=(1, 1),
                                     maxoutsize = maxoutsize[2],
                                     params = params,
                                     params_number = 2)
