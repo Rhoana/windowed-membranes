@@ -1,4 +1,4 @@
-# Membrane and Synapse Detection
+# Windowed Membrane and Synapse Detection
 Convolutional network for membrane and synapse detection.
 
 ### Dependencies
