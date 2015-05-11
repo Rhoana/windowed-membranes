@@ -1,5 +1,20 @@
-# Directory Structure
+# Membrane and Synapse Detection
+Convolutional network for membrane and synapse detection.
 
+## How to run (default settings)
+1. Place training data in `data`-folder. Data can be downloaded from [Google Drive](https://drive.google.com/drive/u/1/folders/0B016PpcCQHuVfmdYSEdxSGVHdDNuenJyQjdZdkRkUXVOamFzSEpua0hfSzNQX0xSLXpaMFU?ltmpl=drive).
+2. Specify data-folders in `config/global.yaml`
+3. Run default configuration: `python runner.py`
+4. Plot latest run: `python plot.py`
+
+## Config file
+There are two main config files. Global settings are defined in `data/global.yaml`. These settings are overridden by the settings defined in your custom config-file. Running `python runner.py` will run the default custom config-file. To use a customized config-file you can define a file `data/custom_config.yaml` and run it by `python runner.py custom_config.yaml`
+
+### Settings
+
+#### Network size
+
+## Directory Structure
 <pre>
 README.md
 ├── edge_prediction
@@ -34,21 +49,4 @@ README.md
 │   ├── pool_layer.py
 └── util
 </pre>
-
-# Membrane and Synapse Detection
-Convolutional network for membrane and synapse detection.
-
-## How to run (default settings)
-1. Place training data in `data`-folder
-2. If training-data is in tiff-stack format, run: `python data/clean_folders.py`
-3. Specify data-folders in `config/global.yaml`
-4. Run default configuration: `python runner.py`
-5. Plot latest run: `python plot.py`
-
-## Config file
-There are two main config files. Global settings are defined in `data/global.yaml`. These settings are overridden by the settings defined in your custom config-file. Running `python runner.py` will run the default custom config-file. To use a customized config-file you can define a file `data/custom_config.yaml` and run it by `python runner.py custom_config.yaml`
-
-### Settings
-
-#### Network size
 
