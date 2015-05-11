@@ -35,30 +35,20 @@ README.md
 └── util
 </pre>
 
-# Edge Prediction
-Convolutional network that performs edge detection by using segmented labeled training data. 
+# Membrane and Synapse Detection
+Convolutional network for membrane and synapse detection.
 
-There are two ways to run the code from within the edge_prediction directory:
+## How to run (default settings)
+1. Place training data in `data`-folder
+2. If training-data is in tiff-stack format, run: `python data/clean_folders.py`
+3. Specify data-folders in `config/global.yaml`
+4. Run default configuration: `python runner.py`
+5. Plot latest run: `python plot.py`
 
-## Option 1 (Run)
-1 . Run `python edge_prediction --small/medium/large` to only perform edge prediction.
-2. The training time is set to 100 epochs. To train for a shorter period, press `Ctrl+C` to throw a KeybordInterrupt and the program will exit the training loop and start the prediction on the test set. 
-3. Run `plot.py`n to plot a visual prediction from the test set, where the integer n is
-   a member of the test set.
+## Config file
+There are two main config files. Global settings are defined in `data/global.yaml`. These settings are overridden by the settings defined in your custom config-file. Running `python runner.py` will run the default custom config-file. To use a customized config-file you can define a file `data/custom_config.yaml` and run it by `python runner.py custom_config.yaml`
 
-## Option 2 (Run Model + Generate Training Data)
-1. Place training data in `synapse_train_data/train_input`
-2. Place training labels in `synapse_train_data/train_labels`
-3. Run `python edge_prediction --pre-process --small/medium/large` to generate training/test data, and to predict edges.
-4. Add the argument 'only' after preprocess to only generate training data (ie: `python edge_prediction --pre-process only`)
-5. Run `python edge_prediction --pre-process synapse to generate training data for synapse
-6. Run `python edge_prediction --pre-process both` to generate training data for both
-7. Run `python edge_prediction --small/medium/large --synapse` to run synapse prediction 
-8. The training time is set to 100 epochs. To train for a shorter period, press `Ctrl+C` to throw a KeybordInterrupt and the program will exit the training loop and start the prediction on the test set. 
-7. Run `plot.py`n to plot a visual prediction from the test set, where the integer n is
-   a member of the test set.
+### Settings
 
-Small, medium and large are convolutional network with 10,64 and 100 filters per
-convolution. The train/test set for the three options are 1500/500, 4000/1000
-and 9000/1000, respectively. In all cases, the validation set is of size 200
-and is a subset of the test set. The number of neurons in the fully connected layer is always the same as the number of outputs in the last convolutional layer.
+#### Network size
+
