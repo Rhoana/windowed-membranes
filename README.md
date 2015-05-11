@@ -8,7 +8,7 @@ Convolutional network for membrane and synapse detection.
 4. Plot latest run: `python plot.py`
 
 ## Config file
-There are two main config files. Global settings are defined in `data/global.yaml`. These settings are overridden by the settings defined in your custom config-file. Running `python runner.py` will run the default custom config-file. To use a customized config-file you can define a file `data/custom_config.yaml` and run it by `python runner.py custom_config.yaml`
+There are two main config files. Global settings are defined in `data/global.yaml` and custom settings is defined in a separate config-file. By default, this custom config-file is `data/default.yaml`. You can define your own custom config file `data/custom_config.yaml` and run it by `python runner.py custom_config.yaml`. Note that settings defined in the custom config-file will overide the settings in the global config-file.
 
 ### Settings
 
