@@ -70,7 +70,7 @@ class ConvNetClassifier(object):
         return global_data_map, custom_data_map
 
     def get_locals(self, global_data_map, custom_data_map):
-        for key in ["hyper-parameters", "image-data", "optimizer-data", "classifier", "weights_path", "pre-process", "main"]:
+        for key in ["hyper-parameters", "image-data", "optimizer-data", "classifier", "weights", "main"]:
             locals().update(global_data_map[key])
             if key in custom_data_map:
                 locals().update(custom_data_map[key])
@@ -84,14 +84,12 @@ class ConvNetClassifier(object):
                         setattr(theano.config, key, value)
 
         # set convolution size
-        locals().update(global_data_map["convolution"][custom_data_map["convolution"]["size"]])
+        locals().update(global_data_map["network"][custom_data_map["network"]["size"]])
         # set training data location
-        locals().update(global_data_map["convolution"]["training-data"][custom_data_map["classifier"]["classifier"]])
-        # load_n_layers  
-        locals().update(custom_data_map["load-weights"])
-        # load weights_path
-        locals().update(global_data_map["weights_path"])
-        self.path = global_data_map["weights_path"]["weights_path"]
+        locals().update(global_data_map["network"]["training-data"][custom_data_map["classifier"]["classifier"]])
+        # load weights
+        locals().update(custom_data_map["weights"])
+        self.path = global_data_map["weights"]["weights_path"]
         
         for key, value in locals().iteritems():
             if key not in ["global_data_map", "custom_data_map", "data_map", "self"]:

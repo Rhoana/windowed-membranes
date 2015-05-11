@@ -5,17 +5,16 @@ hyper-parameters:
   out_window_shape: [48,48]
   penalty_factor: 1.
   stride: 12
+  layers_3D: 1
 image-data:
   samples_per_image: 200
   n_test_files: 3 
-  layers_3D: 1
-convolution:
+  pre_process: !!bool False
+network:
   size: small
 classifier:
   classifier: "membrane"
-load-weights:
+weights:
   load_n_layers: -1
 main:
     ID_folder: test
-pre-process:
-    pre_process: !!bool True

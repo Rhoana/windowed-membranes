@@ -5,6 +5,7 @@ hyper-parameters:
   out_window_shape: [12,12]
   penalty_factor: 0.
   stride: 12
+  layers_3D: 1
 image-data:
   samples_per_image: 400
   n_validation_samples: 2000
@@ -12,7 +13,9 @@ image-data:
   img_size: [1024,1024]
   n_train_files: !!null "None"
   n_test_files: 3
-  layers_3D: 3
+  adaptive_histogram_equalization: !!bool False
+  pre_process_only: !!bool False
+  pre_process: !!bool True
 optimizer-data:
   optimizer: 'RMSprop'
   optimizerData:
@@ -28,7 +31,7 @@ theano:
     floatX: float32
     device: gpu
     nvcc: fastmath
-convolution:
+network:
   large:
     num_kernels: [64,64,128]
     kernel_sizes: [[5, 5], [3, 3], [3,3]]
@@ -54,12 +57,9 @@ convolution:
       directory_input: ['data/train-input','data/AC3-input']
       directory_labels: ['data/train-labels','data/AC3-labels']
       folder_name: 'synapse_windows'
-weights_path: 
+weights:
+  load_n_layers: -1
   weights_path: 'parameters/params.dat'
-pre-process:
-  adaptive_histogram_equalization: !!bool False
-  pre_process_only: !!bool False
-  pre_process: !!bool True
 main:
     predict_only: !!bool False
     predict_train_set: !!bool False
