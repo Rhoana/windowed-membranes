@@ -72,12 +72,8 @@ class LogisticRegression(object):
         term = T.mean(T.abs_(test_dx)+T.abs_(test_dy),axis=1)
         
         # Calculate cost function
-        if self.classifier in ['membrane','synapse']:
-            L = - T.mean( y* T.log(self.p_y_given_x) + (1 - y) * T.log(1 - self.p_y_given_x), axis=1)
-            L = T.mean(L+term*penatly_factor)
-        elif self.classifier == 'synapse_reg':
-            L = T.mean((y-self.p_y_given_x)**2)
-        return L
+        L = - T.mean( y* T.log(self.p_y_given_x) + (1 - y) * T.log(1 - self.p_y_given_x), axis=1)
+        return T.mean(L+term*penatly_factor)
 
     def errors(self, y):
         '''
@@ -93,7 +89,28 @@ class LogisticRegression(object):
         '''
         return self.p_y_given_x
 
-    def TestVersion(self,input, n_in, n_out, out_window_shape, classes = 2, W = None, b = None,
-            params = {}, params_number = None, classifier = 'standard'):
-        return LogisticRegression(input, n_in, n_out, out_window_shape, classes = classes, W = self.W, b = self.b,
-            params = params, params_number = params_number, classifier = classifier)
+    def TestVersion(self,
+            input, 
+            n_in, 
+            n_out, 
+            out_window_shape, 
+            classes = 2, 
+            W = None, 
+            b = None,
+            params = {}, 
+            params_number = None, 
+            classifier = 'standard'):
+        return LogisticRegression(input, 
+                n_in, 
+                n_out, 
+                out_window_shape, 
+                classes = classes, 
+                W = self.W, 
+                b = self.b,
+                params = params, 
+                params_number = params_number, 
+                classifier = classifier)
+
+
+
+

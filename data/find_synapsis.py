@@ -6,9 +6,9 @@ from scipy import ndimage
 
 affine = False
 
-directory_input = 'AC3-input'
+directory_input = 'train-input'
 files_input = sorted(glob.glob(directory_input+"/*.tif"))
-directory_labels = 'AC3-labels'
+directory_labels = 'train-labels'
 files_labels = sorted(glob.glob(directory_labels+"/*.tif"))
 
 n = -1

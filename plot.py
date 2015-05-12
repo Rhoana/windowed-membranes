@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
 import numpy as np
 import sys
-import util.post_process as post
+import post_process.post_process as post
 
 def plot_samples(n=0):
     x = np.load('results/x_train_examples.npy')
@@ -36,14 +36,13 @@ def plot_samples(n=0):
     ax2.set_title('Labeled')
 
 def plot(adress = 'results/results/', n=0):
-    n = int(n)
-   
 
-    y      = np.load(adress + '/y.npy')
-    output = np.load(adress + '/output.npy')
-
-    print y.shape
-    print output.shape
+    try:
+        y      = np.load(adress + '/y.npy')
+        output = np.load(adress + '/output.npy')
+    except:
+        print "Error: Invalid adress"
+        exit()
 
     print 'Max/min y-value(bug-check): ',y.max(),y.min()
     print 'Max/min pred-value(bug-check): ',output.max(),output.min()
@@ -56,9 +55,14 @@ def plot(adress = 'results/results/', n=0):
     plt.colorbar()
     plt.show()
 
+
 def results():
     
-    results = np.load('results/results.npy')
+    try:
+        results = np.load(adress + '/results.npy')
+    except:
+        print "Invalid adress."
+        exit()
 
     fig = plt.figure(1)
     ax1 = fig.add_subplot(211)
@@ -90,11 +94,19 @@ if __name__ == "__main__":
             n = sys.argv[-1]
         else:
             n = 0
+
         plot_samples(n=n)
     else:
-        if len(sys.argv)>1:
+        if len(sys.argv)>2:
+            adress = "rund_data/" + sys.argv[-2] + "/results/"
+            n = sys.argv[-1]
+        elif len(sys.argv)>1:
             n = sys.argv[-1]
         else:
             n = 0
+        try:
+            n = int(n)
+        except:
+            print "Error: Invalid image number."
         plot(adress = adress, n=n)
     plt.show()

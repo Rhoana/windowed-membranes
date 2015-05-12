@@ -23,7 +23,11 @@ class ImagesFromFile(object):
 
         threshold = 399
         # Remove synapses
-        img[np.where(img>threshold)] = 0
+        for n in xrange(img.shape[0]):
+            for m in xrange(img.shape[1]):
+                if img[n,m] > threshold:
+                    img[n,m] = 0
+
         img = self.edge_filter(img)
 
         edged = self.convert_binary(img)
@@ -37,8 +41,12 @@ class ImagesFromFile(object):
             threshold = 0
 
         # Find synapse
-        img[np.where(img<threshold)] = 0
-        img[np.where(img>threshold)] = 1
+        for n in xrange(img.shape[0]):
+            for m in xrange(img.shape[1]):
+                if img[n,m] > threshold:
+                    img[n,m] = 1
+                else:
+                    img[n,m] = 0
 
         return img
 
@@ -64,6 +72,9 @@ class ImagesFromFile(object):
         counter = 0
         for directory in directory_input:
             files_input = sorted(glob.glob(directory+"/*.tif"),key=self.sort_key)
+            if len(files_input) == 0:
+                print "Error: Unable to read directory:",directory
+                exit()
         
             for File in files_input:
 
@@ -78,13 +89,17 @@ class ImagesFromFile(object):
 	
         for directory in directory_labels:
             files_labels = sorted(glob.glob(directory+"/*.tif"),key=self.sort_key)
+            if len(files_labels) == 0:
+                print "Error: Unable to read directory:",directory
+                exit()
+
             for File in files_labels:
                 img_temp = Image.open(File)                                                        
                 img_temp_temp = np.array(img_temp.getdata()).reshape(img_temp.size)
                 img_temp_temp.flags.writeable = True
                 if self.classifier == 'membrane':
                     img_temp_temp = self.find_edges(img_temp_temp)
-                elif self.classifier == 'synapse' or self.classifier == 'synapse_reg':
+                elif self.classifier == 'synapse':
                     img_temp_temp = self.find_synapse(img_temp_temp,File)
 
                 img_stack = np.vstack((img_stack,img_temp_temp.flatten(1)))           

@@ -3,6 +3,8 @@ import numpy as np
 import yaml
 import cPickle
 import theano
+import time
+import scipy.signal
 
 from pre_process.pre_process               import Read 
 
@@ -20,31 +22,57 @@ class RunnerFunctions(object):
         cPickle.dump(obj, f, protocol=cPickle.HIGHEST_PROTOCOL)
         f.close()
 
+    # --------------------------------------------------------------------------
     def load_layers(self, load_n_layers):
-        total_n_layers = 5
-        if os.path.isfile(self.path) == True:
-            params = self.load_params(self.path)
-            self.params = params
-            for n in xrange(load_n_layers,total_n_layers):
-                del self.params["W"+str(n)]
-                del self.params["b"+str(n)]
+        if self.load_n_layers != -1:
+            total_n_layers = 5
+            if os.path.isfile(self.path) == True:
+                params = self.load_params(self.path)
+                self.params = params
+                for n in xrange(load_n_layers,total_n_layers):
+                    del self.params["W"+str(n)]
+                    del self.params["b"+str(n)]
+            else:
+                self.params = None
+                print 'Warning: Unable to load weights'
         else:
-            self.params = None
-            print 'Warning: Unable to load weights'
-        return True
+            pass
 
+    # --------------------------------------------------------------------------
     def generate_train_test_set(self, config_file):
-        print "Generating Train/Test Set..."
-        read = Read(self.in_window_shape, self.out_window_shape, self.stride, self.img_size, self.classifier, self.n_train_files, self.n_test_files, self.samples_per_image, self.on_ratio, self.directory_input, self.directory_labels, self.membrane_edges,self.layers_3D, self.adaptive_histogram_equalization,self.pre_processed_folder,self.predict_only,self.predict_train_set,self.images_from_numpy)
-        read.generate_data(config_file)
-        return True
+        if self.pre_process == True:
+            print "Generating Train/Test Set..."
+            read = Read(self.in_window_shape, 
+                    self.out_window_shape, 
+                    self.stride, 
+                    self.img_size, 
+                    self.classifier, 
+                    self.n_train_files, 
+                    self.n_test_files, 
+                    self.samples_per_image, 
+                    self.on_ratio, 
+                    self.directory_input, 
+                    self.directory_labels, 
+                    self.membrane_edges,
+                    self.layers_3D, 
+                    self.adaptive_histogram_equalization,
+                    self.pre_processed_folder,
+                    self.predict_only,
+                    self.predict_train_set,
+                    self.images_from_numpy)
 
+            read.generate_data(config_file)
+        else:
+            pass
+
+    # --------------------------------------------------------------------------
     def get_params(self):
         params = {}
         for param in self.params:
             params[param.name] = param.get_value()
         return params
 
+    # --------------------------------------------------------------------------
     def get_config(self, custom_config_file):
         global_config = open("config/global.yaml")
         global_data_map = yaml.safe_load(global_config)
@@ -52,6 +80,7 @@ class RunnerFunctions(object):
         custom_data_map = yaml.safe_load(custom_config)
         return global_data_map, custom_data_map
 
+    # --------------------------------------------------------------------------
     def get_locals(self, global_data_map, custom_data_map):
         for key in ["hyper-parameters", "image-data", "optimizer-data", "classifier", "weights", "main"]:
             locals().update(global_data_map[key])
@@ -79,6 +108,7 @@ class RunnerFunctions(object):
                 setattr(self, key, value)
         return True
 
+    # --------------------------------------------------------------------------
     def init(self,config_file):
         global_data_map, custom_data_map = self.get_config(config_file)
         self.get_locals(global_data_map, custom_data_map)
@@ -89,6 +119,7 @@ class RunnerFunctions(object):
         self.kernel_sizes = ((self.kernel_sizes[0][0],self.kernel_sizes[0][1]),(self.kernel_sizes[1][0],self.kernel_sizes[1][1]),(self.kernel_sizes[2][0],self.kernel_sizes[2][1]))
         self.maxoutsize = (self.maxoutsize[0],self.maxoutsize[1],self.maxoutsize[2])
 
+    # --------------------------------------------------------------------------
     def define_folders(self):
         self.ID_folder = "run_data/" + self.ID_folder
 
@@ -119,3 +150,59 @@ class RunnerFunctions(object):
             except:
                 print "Error: Unable to find pre-processed data"
                 exit()
+
+    # --------------------------------------------------------------------------
+    def init_predict(self,data_set,net,batch_size,x,index):
+        predict = theano.function(inputs=[index], 
+                                outputs=net.layer4.prediction(),
+                                givens = {
+                                    x: data_set[index * self.batch_size: (index + 1) * self.batch_size]
+                                    }
+                                )
+        return predict
+
+    # --------------------------------------------------------------------------
+    def predict_set(self,predict,n_batches,number_pixels = None):
+                                
+        output = np.zeros((0,self.out_window_shape[0]*self.out_window_shape[1]))
+
+        start_test_timer = time.time()
+        for i in xrange(n_batches):
+            output = np.vstack((output,predict(i)))
+        stop_test_timer = time.time()
+
+        if number_pixels != None:
+            pixels_per_second = number_pixels/(stop_test_timer-start_test_timer)
+            print "Prediction, pixels per second:  ", pixels_per_second
+
+        return output
+
+    # --------------------------------------------------------------------------
+    def evaluate(self,pred,ground_truth,eval_window_size = 6):
+        ground_truth = ground_truth[:pred.shape[0]]
+        #eval_window = np.ones((eval_window_size,eval_window_size))
+
+        #if ground_truth.ndim == 2:
+        #    ground_truth = ground_truth.reshape(ground_truth.shape[0],int(np.sqrt(ground_truth.shape[1])),int(np.sqrt(ground_truth.shape[1])))
+        #    pred = pred.reshape(ground_truth.shape)
+
+        #error = 0
+        #for n in xrange(pred.shape[0]):
+        #    pred         = scipy.signal.convolve2d(pred[n],eval_window,mode="valid")/float(eval_window_size**2)
+        #    ground_truth = scipy.signal.convolve2d(ground_truth[n],eval_window,mode="valid")/float(eval_window_size**2)
+
+        #    error += np.mean(np.abs(pred-ground_truth))
+
+        #return error
+        return np.mean(np.abs(pred-ground_truth))
+
+    def write_last_run(self,ID_folder):
+        latest_run = open('latest_run.txt', 'w')
+        latest_run.write(ID_folder + "\n")
+        latest_run.close()
+
+
+
+
+
+

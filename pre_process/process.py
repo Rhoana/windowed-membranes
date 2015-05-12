@@ -15,7 +15,7 @@ class Process(object):
                 labeled_out = labeled_in
                 print "Warning: thin edge"
 
-        elif classifier in ['synapse','synapse_reg']:
+        elif classifier == 'synapse':
             labeled_out = labeled_in
 
         #if adaptive_histogram_equalization:

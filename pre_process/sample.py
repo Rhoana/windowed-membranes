@@ -23,15 +23,9 @@ class Sample(object):
         self.config_file = config_file
 
         # Define training arrays and functions
-        if self.classifier in ['membrane','synapse']:
-            self.train_x = np.zeros((0,self.layers_3D*self.in_window_shape[0]**2))
-            self.train_y = np.zeros((0,self.out_window_shape[0]**2))
-            self.sample_function = self.sample_membrane_synapse
-        elif self.classifier == 'synapse_reg':
-            self.train_x = np.zeros((0,self.layers_3D*self.in_window_shape[0]**2))
-            self.train_y = np.zeros((0,1))
-            self.sample_function = self.sample_synapse_reg
-
+        self.train_x = np.zeros((0,self.layers_3D*self.in_window_shape[0]**2))
+        self.train_y = np.zeros((0,self.out_window_shape[0]**2))
+        self.sample_function = self.sample_membrane_synapse
 
     def run_sampling(self,labeled_in,labeled_out,train_img_input):
         # Sample training data from training images
@@ -123,63 +117,3 @@ class Sample(object):
 
         return x,y,diff_samples
 
-
-    def sample_synapse_reg(self,nn,imarray,thick_edged,input_image,n_samples,image_group_train,sample_stride = 4,on_membrane_synapse = False,diff_samples = 0,on_synapse_threshold = 0.1):
-
-        n_samples -= diff_samples
-
-        if self.layers_3D == 1:
-            index = np.array([0])
-        elif self.layers_3D == 3:
-            index = np.array([-1,0,1])
-        index += nn
-
-        find_number = on_membrane_synapse
-        on_synapse  = on_membrane_synapse
-
-        offset = (self.in_window_shape[0]-self.out_window_shape[0])/2
-        temp = imarray[nn,offset:-(offset),offset:-(offset)]
-        scharr = np.ones(self.out_window_shape) 
-        temp   = signal.convolve2d(temp, scharr, mode='valid')
-        temp /= float(self.out_window_shape[0]**2)
-
-        if on_synapse == True:
-            temp_x_samples,temp_y_samples = np.where(temp > on_synapse_threshold)
-        else:
-            temp_x_samples,temp_y_samples = np.where(temp < on_synapse_threshold)
-
-        if temp_x_samples.size < n_samples:
-            print 'Warning: Not enough samples...',temp_x_samples.size
-            diff_samples = n_samples-temp_x_samples.size
-
-
-        temp_x_samples.flags.writeable = True
-        temp_y_samples.flags.writeable = True
-        rand = np.random.permutation(range(temp_x_samples.size))
-        rand = rand[:n_samples]
-
-        x_samples = np.zeros(rand.size)
-        y_samples = np.zeros(rand.size)
-        for n in xrange(rand.size):
-            x_samples[n] = temp_x_samples[rand[n]]
-            y_samples[n] = temp_y_samples[rand[n]]
-
-        x = np.zeros((rand.size,self.layers_3D*self.in_window_shape[0]*self.in_window_shape[1]))
-        y = np.zeros((rand.size,1))
-        for n in xrange(rand.size):
-
-            in_start_point_x = x_samples[n]
-            in_end_point_x   = in_start_point_x + self.in_window_shape[0]
-            in_start_point_y = y_samples[n]
-            in_end_point_y   = in_start_point_y + self.in_window_shape[1]
-
-            out_sample = temp[x_samples[n],y_samples[n]]
-            image_sample = input_image[index,in_start_point_x:in_end_point_x,in_start_point_y:in_end_point_y]
-
-            out_sample = out_sample.reshape(1,)
-            image_sample = image_sample.reshape(self.layers_3D*self.in_window_shape[0]*self.in_window_shape[1],)
-
-            x[n] = image_sample
-            y[n] = out_sample
-
-        return x,y,diff_samples

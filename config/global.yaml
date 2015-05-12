@@ -36,30 +36,26 @@ network:
     num_kernels: [64,64,128]
     kernel_sizes: [[5, 5], [3, 3], [3,3]]
     maxoutsize: [2,2,4]
-    dropout: [0.2,0.2,0.2,0.2]
+    dropout: [0.2,0.2,0.2,0.5]
   medium:
     num_kernels: [64,64,64]
     kernel_sizes: [[5, 5], [3, 3], [3,3]]
     maxoutsize: [1,1,1]
-    dropout: [0.2,0.2,0.2,0.2]
+    dropout: [0.2,0.2,0.2,0.5]
   small:
     num_kernels: [10,10,10]
     kernel_sizes: [[5, 5], [3, 3], [3,3]]
     maxoutsize: [1,1,1]
-    dropout: [0.2,0.2,0.2,0.2]
+    dropout: [0.2,0.2,0.2,0.5]
   training-data:
     membrane:
       directory_input: ['data/train-input']
       directory_labels: ['data/train-labels']
       folder_name: 'edges'
     synapse:
-      directory_input: ['data/train-input','data/AC3-input']
-      directory_labels: ['data/train-labels','data/AC3-labels']
+      directory_input: ['data/train-input'] #,'data/AC3-input']
+      directory_labels: ['data/train-labels'] #,'data/AC3-labels']
       folder_name: 'synapse_pixels'
-    synapse_reg:
-      directory_input: ['data/train-input','data/AC3-input']
-      directory_labels: ['data/train-labels','data/AC3-labels']
-      folder_name: 'synapse_windows'
 weights:
   load_n_layers: -1
   weights_path: 'parameters/params.dat'

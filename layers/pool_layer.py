@@ -12,7 +12,7 @@ from theano.tensor.nnet import conv
 from logistic_sgd import LogisticRegression
 from hidden_layer import HiddenLayer
 
-from edge_prediction_conv.helper_functions import Functions as f
+from util.helper_functions import Functions as f
 
 
 class PoolLayer(object):

@@ -1,11 +1,11 @@
-from helper_functions import Functions
+from util.helper_functions import Functions
 import theano
-from lib.pool_layer                    import PoolLayer
-from lib.hidden_layer                  import HiddenLayer
-from lib.logistic_sgd                  import LogisticRegression
-from lib.pool_layer import PoolLayer
+from layers.pool_layer                    import PoolLayer
+from layers.hidden_layer                  import HiddenLayer
+from layers.logistic_sgd                  import LogisticRegression
+from layers.pool_layer import PoolLayer
 
-class CovNet(Functions):
+class ConvNet(Functions):
     '''
     Class that defines the hierarchy and design of the convolutional
     layers.
@@ -80,15 +80,9 @@ class CovNet(Functions):
                                     params_number = 3)
 
 
-            # Layer 4: Logistic regression layer
-            if classifier == 'synapse_reg':
-                output_classes = 1
-            else:
-                output_classes = output_window_shape[0]**2
-
             self.layer4 = LogisticRegression(input = self.dropout(self.layer3.output,p=dropout[3]),
                                             n_in  = (num_kernels[2]/maxoutsize[2]) * self.edge2 * self.edge2,
-                                            n_out = output_classes,
+                                            n_out = output_window_shape[0]**2,
                                             out_window_shape = output_window_shape,
                                             params = params,
                                             params_number = 4,
@@ -112,7 +106,7 @@ class CovNet(Functions):
             #self.layer0_input = x.reshape(self.layer0_input_size)
             self.layer0_input = x.reshape((batch_size,layers_3D,input_window_shape[0],input_window_shape[1]))
 
-            self.layer0_test = network.layer0.TestVersion(rng,
+            self.layer0 = network.layer0.TestVersion(rng,
                                         input=self.layer0_input,
                                         image_shape=self.layer0_input_size,
                                         subsample= (1,1),
@@ -128,8 +122,8 @@ class CovNet(Functions):
             assert ((self.edge0 - kernel_sizes[1][0] + 1) % 2) == 0                        # Check pooling size
 
             # Initialize Layer 1
-            self.layer1_test = network.layer1.TestVersion(rng,
-                                        input= self.dropout(self.layer0_test.output,p=dropout[0]),
+            self.layer1 = network.layer1.TestVersion(rng,
+                                        input= self.dropout(self.layer0.output,p=dropout[0]),
                                         image_shape=self.layer1_input_size,
                                         subsample= (1,1),
                                         filter_shape=(num_kernels[1], num_kernels[0]/maxoutsize[0]) + kernel_sizes[1],
@@ -144,8 +138,8 @@ class CovNet(Functions):
             #assert (self.edge1 - kernel_sizes[2][0] + 1) == 0                        # Check pooling size
 
             # Initialize Layer 2
-            self.layer2_test = network.layer2.TestVersion(rng,
-                                        input= self.dropout(self.layer1_test.output,p=dropout[1]),
+            self.layer2 = network.layer2.TestVersion(rng,
+                                        input= self.dropout(self.layer1.output,p=dropout[1]),
                                         image_shape=self.layer2_input_size,
                                         subsample= (1,1),
                                         filter_shape=(num_kernels[2], num_kernels[1]/maxoutsize[1]) + kernel_sizes[2],
@@ -154,10 +148,10 @@ class CovNet(Functions):
                                         params = params,
                                         params_number = 2)
 
-            self.layer3_input = self.layer2_test.output.flatten(2)
+            self.layer3_input = self.layer2.output.flatten(2)
             
             # Layer 3: Fully connected layer
-            self.layer3_test = network.layer3.TestVersion(rng,
+            self.layer3 = network.layer3.TestVersion(rng,
                                     input      = self.dropout(self.layer3_input,p=dropout[2]),
                                     n_in       = (num_kernels[2]/maxoutsize[2]) * self.edge2 * self.edge2,
                                     n_out      = (num_kernels[2]/maxoutsize[2]) * self.edge2 * self.edge2,
@@ -166,22 +160,45 @@ class CovNet(Functions):
                                     params_number = 3)
 
 
-            # Layer 4: Logistic regression layer
-            if classifier == 'synapse_reg':
-                output_classes = 1
-            else:
-                output_classes = output_window_shape[0]**2
-
-            self.layer4_test = network.layer4.TestVersion(input = self.dropout(self.layer3_test.output,p=dropout[3]),
+            self.layer4 = network.layer4.TestVersion(input = self.dropout(self.layer3.output,p=dropout[3]),
                                             n_in  = (num_kernels[2]/maxoutsize[2]) * self.edge2 * self.edge2,
-                                            n_out = output_classes,
+                                            n_out = output_window_shape[0]**2,
                                             out_window_shape = output_window_shape,
                                             params = params,
                                             params_number = 4,
                                             classifier = classifier)
             
-    def TestVersion(self,rng, batch_size,layers_3D,num_kernels,kernel_sizes,x,y,input_window_shape,output_window_shape,classifier,maxoutsize = (1,1,1), params = None, dropout = [0.0,0.0,0.0,0.0], network = None):
-        return CovNet(rng, batch_size,layers_3D,num_kernels,kernel_sizes,x,y,input_window_shape,output_window_shape,classifier,maxoutsize = maxoutsize, params = params, dropout = dropout, test_version = True,network = network)
+    def TestVersion(self,
+            rng, 
+            batch_size,
+            layers_3D,
+            num_kernels,
+            kernel_sizes,
+            x,
+            y,
+            input_window_shape,
+            output_window_shape,
+            classifier,
+            maxoutsize = (1,1,1), 
+            params = None, 
+            dropout = [0.0,0.0,0.0,0.0], 
+            network = None):
+
+        return ConvNet(rng, 
+                batch_size,
+                layers_3D,
+                num_kernels,
+                kernel_sizes,
+                x,
+                y,
+                input_window_shape,
+                output_window_shape,
+                classifier,
+                maxoutsize = maxoutsize, 
+                params = params, 
+                dropout = dropout, 
+                test_version = True,
+                network = network)
  
  
 

@@ -6,15 +6,15 @@ import numpy as np
 import theano
 import theano.sandbox.cuda
 import theano.tensor as T
-import util.post_process as post 
 import cPickle
 from theano.tensor.shared_randomstreams import RandomStreams
 
+import post_process.post_process as post 
 from util.build_train_test_set             import BuildTrainTestSet 
 from util.runner_functions                 import RunnerFunctions
 from pre_process.pre_process               import Read 
-from edge_prediction_conv.edge_cov_net     import CovNet 
-from edge_prediction_conv.helper_functions import Functions as f 
+from models.conv_net     import ConvNet 
+from util.helper_functions import Functions as f 
 
 class ConvNetClassifier(RunnerFunctions):
     
@@ -26,45 +26,42 @@ class ConvNetClassifier(RunnerFunctions):
 
     def run(self):
 
-        if self.pre_process:
-            self.generate_train_test_set(config_file)
-            if self.pre_process_only:
-                sys.exit(0)
+        # Generate training set and test set
+        self.generate_train_test_set(config_file)
 
-        if self.load_n_layers != -1:
-            self.load_layers(self.load_n_layers)
+        # Load weight layers
+        self.load_layers(self.load_n_layers)
 
-         #Random
+        # Initialize random stream
         rng              = np.random.RandomState(42)
-        rngi             = np.random.RandomState(42)
         
         print 'Loading data ...'
 
-        # load in and process data
+        # load in and pre-process data
         preProcess              = BuildTrainTestSet(self.n_validation_samples,self.pre_processed_folder)
-        data                    = preProcess.run(self.classifier,config_file)
+        data                    = preProcess.build_train_val_set()
+        data2                   = preProcess.build_test_set()
         
         if self.predict_only == False:
-            train_set_x,train_set_y = data[0],data[3]
-            n_train_batches  = train_set_x.get_value(borrow=True).shape[0]
+            train_set_x,train_set_y = data[0],data[2]
+            n_train_batches         = train_set_x.get_value(borrow=True).shape[0]
 
-        valid_set_x,valid_set_y = data[1],data[4]
-        n_valid_batches  = valid_set_x.get_value(borrow=True).shape[0]
-        test_set_x,test_set_y   = data[2],data[5]
-        n_test_batches   = test_set_x.get_value(borrow=True).shape[0]
+        valid_set_x,valid_set_y = data[1],data[3]
+        n_valid_batches         = valid_set_x.get_value(borrow=True).shape[0]
+        test_set_x,test_set_y   = data2[0],data2[1]
+        n_test_batches          = test_set_x.get_value(borrow=True).shape[0]
 
         print 'Initializing neural network ...'
 
         # print error if batch size is to large
         if valid_set_y.eval().size<self.batch_size:
             print 'Error: Batch size is larger than size of validation set.'
-
         
         # adjust batch size
         while n_test_batches % self.batch_size != 0:
             self.batch_size += 1 
-
         print 'Batch size: ',self.batch_size
+
         n_train_batches /= self.batch_size
         n_test_batches  /= self.batch_size
         n_valid_batches /= self.batch_size
@@ -73,28 +70,48 @@ class ConvNetClassifier(RunnerFunctions):
         x       = T.matrix('x')        # input image data
         y       = T.matrix('y')        # input label data
         
-        cov_net = CovNet(rng, self.batch_size, self.layers_3D, self.num_kernels, self.kernel_sizes, x, y,self.in_window_shape,self.out_window_shape,self.classifier,maxoutsize = self.maxoutsize, params = self.params, dropout = self.dropout)
+        # Initialize networks
+        conv_net = ConvNet(rng, 
+                self.batch_size, 
+                self.layers_3D, 
+                self.num_kernels, 
+                self.kernel_sizes, 
+                x, 
+                y,
+                self.in_window_shape,
+                self.out_window_shape,
+                self.classifier,
+                maxoutsize = self.maxoutsize, 
+                params = self.params, 
+                dropout = self.dropout)
 
-        cov_net_test = cov_net.TestVersion(rng, self.batch_size, self.layers_3D, self.num_kernels, self.kernel_sizes, x, y,self.in_window_shape,self.out_window_shape,self.classifier,maxoutsize = self.maxoutsize, params = self.params, network = cov_net, dropout = [0.,0.,0.,0.])
+        conv_net_test = conv_net.TestVersion(rng, 
+                self.batch_size, 
+                self.layers_3D, 
+                self.num_kernels, 
+                self.kernel_sizes, 
+                x, 
+                y,
+                self.in_window_shape,
+                self.out_window_shape,
+                self.classifier,
+                maxoutsize = self.maxoutsize, 
+                params = self.params, 
+                network = conv_net, 
+                dropout = [0.,0.,0.,0.5])
 
         # Initialize parameters and functions
-        cost        = cov_net.layer4.negative_log_likelihood(y,self.penalty_factor) # Cost function
-        self.params = cov_net.params                                         # List of parameters
-        grads       = T.grad(cost, self.params)                                   # Gradient
-        index       = T.lscalar()                                            # Index
+        cost        = conv_net.layer4.negative_log_likelihood(y,self.penalty_factor) # Cost function
+        self.params = conv_net.params                                                # List of parameters
+        grads       = T.grad(cost, self.params)                                     # Gradient
+        index       = T.lscalar()                                                   # Index
         
         # Intialize optimizer
-        updates = cov_net.init_optimizer(self.optimizer, cost, self.params, self.optimizerData)
-
-        # Shuffling of rows for stochastic gradient
+        updates = conv_net.init_optimizer(self.optimizer, cost, self.params, self.optimizerData)
         srng = RandomStreams(seed=234)
         perm = theano.shared(np.arange(train_set_x.eval().shape[0]))
-        rand = theano.shared(np.arange(train_set_x.eval().shape[0]))
 
-        # acc
-        errors = cov_net_test.layer4_test.errors
-        
-        # Train model   
+        # Train functions
         if self.predict_only == False:
             train_model = theano.function(                                          
                         [index],                                                    
@@ -106,33 +123,14 @@ class ConvNetClassifier(RunnerFunctions):
                 }                                                                   
             )
 
-            #Validation function
-            validate_model = theano.function(
-                            [index],
-                            errors(y),
-                            givens = {
-                                    x: valid_set_x[index * self.batch_size: (index + 1) * self.batch_size],
-                                    y: valid_set_y[index * self.batch_size: (index + 1) * self.batch_size]
-                    }
-                )
 
-        #Test function
-        test_model = theano.function(
-                    [index],
-                    errors(y),
-                    givens = {
-                            x: test_set_x[index * self.batch_size: (index + 1) * self.batch_size],
-                            y: test_set_y[index * self.batch_size: (index + 1) * self.batch_size]
-            }
-        )
-
-        if self.predict_only == False:
-
-            # Results
+            # Initialize result arrays
             cost_results = []
             val_results  = []
             time_results = []
-            
+
+            predict_val = self.init_predict(valid_set_x,conv_net_test,self.batch_size,x,index)
+
             # Solver
             try:
                 print '... Solving'
@@ -140,13 +138,26 @@ class ConvNetClassifier(RunnerFunctions):
                 for epoch in range(self.epochs):
                     t1 = time.time()
                     perm              = srng.shuffle_row_elements(perm)
-                    train_set_x,train_set_y = f.flip_rotate(train_set_x,train_set_y,self.in_window_shape,self.out_window_shape,perm,index,cost,updates,self.batch_size,x,y,self.classifier,self.layers_3D)
-                    costs             = [train_model(i) for i in xrange(n_train_batches)]
-                    validation_losses = [validate_model(i) for i in xrange(n_valid_batches)]
-                    t2 = time.time()
+                    train_set_x,train_set_y = f.flip_rotate(train_set_x,
+                            train_set_y,
+                            self.in_window_shape,
+                            self.out_window_shape,
+                            perm,
+                            index,
+                            cost,
+                            updates,
+                            self.batch_size,
+                            x,
+                            y,
+                            self.classifier,
+                            self.layers_3D)
 
+                    costs             = [train_model(i) for i in xrange(n_train_batches)]
                     epoch_cost = np.mean(costs)
-                    epoch_val  = np.mean(validation_losses)
+                    output_val = self.predict_set(predict_val,n_valid_batches)
+                    epoch_val  = self.evaluate(output_val,valid_set_y.get_value(borrow=True))
+                    
+                    t2 = time.time()
                     epoch_time = (t2-t1)/60.
 
                     cost_results.append(epoch_cost)
@@ -165,61 +176,44 @@ class ConvNetClassifier(RunnerFunctions):
             end_time = time.time()
             end_epochs = epoch+1
 
+        #results    = np.zeros((3, len(cost_results)))
+        #results[0] = np.array(cost_results)
+        #results[1] = np.array(val_results)
+        #results[2] = np.array(time_results)
+        #np.save(self.results_folder + 'results.npy', results)
+        
         # Timer information
-        number_train_samples = train_set_x.get_value(borrow=True).shape[0]
         number_test_pixels  = test_set_y.get_value(borrow=True).shape[0]*test_set_y.get_value(borrow=True).shape[1]
         
-        predict = theano.function(inputs=[index], 
-                                    outputs=cov_net.layer4.prediction(),
-                                    givens = {
-                                        x: test_set_x[index * self.batch_size: (index + 1) * self.batch_size]
-                                        }
-                                    )
-                                    
-        # Plot example of output
-        if self.classifier in ['membrane','synapse']:
-            output = np.zeros((0,self.out_window_shape[0]*self.out_window_shape[1]))
-        elif self.classifier == 'synapse_reg':
-            output = np.zeros((0,1))
+        # Predict test set
+        predict_test = self.init_predict(test_set_x,conv_net_test,self.batch_size,x,index)
+        output       = self.predict_set(predict_test,n_test_batches,number_pixels=number_test_pixels)
 
-        start_test_timer = time.time()
-        for i in xrange(n_test_batches):
-            output = np.vstack((output,predict(i)))
-        stop_test_timer = time.time()
+        # Evaluate error
+        error = self.evaluate(output,test_set_y.get_value(borrow=True))
+        print 'Error after averaging: ', error
 
-        pixels_per_second = number_test_pixels/(stop_test_timer-start_test_timer)
-        print "Prediction: pixels per second:  ", pixels_per_second
-        
-        mean_abs_error = np.mean(np.abs(output-test_set_y.get_value(borrow=True)))
-        
-        print 'Mean Absolute Error (before averaging): ',mean_abs_error
-
-        if self.classifier in ['membrane', 'synapse']:
-            out_shape = (output.shape[0],self.out_window_shape[0],self.out_window_shape[1])
-        elif self.classifier == 'synapse_reg':
-            out_shape = (output.shape[0],1)
-        output = output.reshape(out_shape)
-
-        results    = np.zeros((3, len(cost_results)))
-        results[0] = np.array(cost_results)
-        results[1] = np.array(val_results)
-        results[2] = np.array(time_results)
-
+        # Post-process
         table = np.load(self.pre_processed_folder + 'table.npy')
-        output, y = post.post_process(train_set_x.get_value(borrow=True),train_set_y.get_value(borrow=True),output,test_set_y.get_value(borrow=True),table,self.img_size,self.in_window_shape,self.out_window_shape,self.classifier)
+        output = output.reshape((output.shape[0],self.out_window_shape[0],self.out_window_shape[1]))
+        output, y = post.post_process(train_set_x.get_value(borrow=True),
+                train_set_y.get_value(borrow=True),
+                output,
+                test_set_y.get_value(borrow=True),
+                table,
+                self.img_size,
+                self.in_window_shape,
+                self.out_window_shape,
+                self.classifier)
 
-        mean_abs_error = np.mean(np.abs(output-y))
-        print 'Mean Absolute Error (after averaging): ', mean_abs_error
+        # Evalute error after post-processing 
+        error = self.evaluate(output,y)
+        print 'Error after averaging: ', error
         
-        np.save(self.results_folder + 'results.npy', results)
+        # Save and write
         np.save(self.results_folder + 'output.npy', output)
         np.save(self.results_folder + 'y.npy', y)
-
-        latest_run = open('latest_run.txt', 'w')
-        latest_run.write(self.ID_folder + "\n")
-        latest_run.close()
-
-
+        self.write_last_run(self.ID_folder)
 
 
 if __name__ == "__main__":
