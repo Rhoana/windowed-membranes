@@ -1,14 +1,15 @@
 hyper-parameters:
   batch_size: 30
   epochs: 30
-  in_window_shape: [64,64]
-  out_window_shape: [12,12]
+  pred_window_size: [64,48]
   penalty_factor: 0.
   stride: 12
   layers_3D: 1
 image-data:
   samples_per_image: 400
   n_validation_samples: 2000
+  in_window_shape: [82,82]
+  out_window_shape: [82,82]
   on_ratio: 0.5
   img_size: [1024,1024]
   n_train_files: !!null "None"
@@ -22,8 +23,10 @@ optimizer-data:
     learning_rate: 0.001
     rho: 0.9
     epsilon: 0.0001
+evaluation:
+  eval_window_size: 6
 classifier:
-  classifier: 'synapse_reg'
+  classifier: 'synapse'
   membrane_edges: 'WideEdges' #GaussianBlur/WideEdges 
 theano:
   config:

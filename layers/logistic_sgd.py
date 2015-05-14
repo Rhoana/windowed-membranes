@@ -10,11 +10,12 @@ class LogisticRegression(object):
     Logistic regression class
     """
 
-    def __init__(self, input, n_in, n_out, out_window_shape, classes = 2, W = None, b = None,
+    def __init__(self, input, n_in, n_out,y, out_window_shape, classes = 2, W = None, b = None,
             params = {}, params_number = None, classifier = 'standard'):
 
         self.out_window_shape = out_window_shape
         self.classifier = classifier
+        self.y = y
 
         if W == None or b == None:
             W_name = "W" + str(params_number)                                         
@@ -61,18 +62,18 @@ class LogisticRegression(object):
         # Define parameters in list
         self.params = [self.W, self.b]
 
-    def negative_log_likelihood(self, y, penatly_factor):
+    def negative_log_likelihood(self, penatly_factor):
         '''
         Return cost function
         '''
         # Calculate sum of derivatives
-        test = self.p_y_given_x.reshape((self.p_y_given_x.shape[0],self.out_window_shape[0],self.out_window_shape[1]))
-        test_dx = (test[:,1:,:] - test[:,:-1,:]).reshape((self.p_y_given_x.shape[0],(self.out_window_shape[0]-1)*self.out_window_shape[1]))
-        test_dy = (test[:,:,1:] - test[:,:,:-1]).reshape((self.p_y_given_x.shape[0],(self.out_window_shape[0]-1)*self.out_window_shape[1]))
+        test = self.p_y_given_x.reshape((self.p_y_given_x.shape[0],self.out_window_shape,self.out_window_shape))
+        test_dx = (test[:,1:,:] - test[:,:-1,:]).reshape((self.p_y_given_x.shape[0],(self.out_window_shape-1)*self.out_window_shape))
+        test_dy = (test[:,:,1:] - test[:,:,:-1]).reshape((self.p_y_given_x.shape[0],(self.out_window_shape-1)*self.out_window_shape))
         term = T.mean(T.abs_(test_dx)+T.abs_(test_dy),axis=1)
         
         # Calculate cost function
-        L = - T.mean( y* T.log(self.p_y_given_x) + (1 - y) * T.log(1 - self.p_y_given_x), axis=1)
+        L = - T.mean( self.y* T.log(self.p_y_given_x) + (1 - self.y) * T.log(1 - self.p_y_given_x), axis=1)
         return T.mean(L+term*penatly_factor)
 
     def errors(self, y):
@@ -93,6 +94,7 @@ class LogisticRegression(object):
             input, 
             n_in, 
             n_out, 
+            y,
             out_window_shape, 
             classes = 2, 
             W = None, 
@@ -103,6 +105,7 @@ class LogisticRegression(object):
         return LogisticRegression(input, 
                 n_in, 
                 n_out, 
+                y,
                 out_window_shape, 
                 classes = classes, 
                 W = self.W, 

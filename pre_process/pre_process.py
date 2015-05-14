@@ -11,9 +11,10 @@ from generate_test_set import GenerateTestSet
 
 class Read(object):
 
-    def __init__(self,in_window_shape, out_window_shape, stride, img_size, classifier, n_train_files, n_test_files, samples_per_image, on_ratio, directory_input, directory_labels, membrane_edges,layers_3D, adaptive_histogram_equalization,pre_processed_folder,predict_only,predict_train_set,images_from_numpy):
+    def __init__(self,in_window_shape, out_window_shape, pred_window_size, stride, img_size, classifier, n_train_files, n_test_files, samples_per_image, on_ratio, directory_input, directory_labels, membrane_edges,layers_3D, adaptive_histogram_equalization,pre_processed_folder,predict_only,predict_train_set,images_from_numpy):
         self.in_window_shape                 = in_window_shape
-        self.out_window_shape                = out_window_shape 
+        self.out_window_shape                = out_window_shape
+        self.pred_window_size                = pred_window_size
         self.stride                          = stride
         self.img_size                        = img_size
         self.n_train_files                   = n_train_files
@@ -46,7 +47,8 @@ class Read(object):
             test_img_input,
             test_img_labels,
             img_group_train,
-            img_group_test) = read_images.read_in_images(self.directory_input,
+            img_group_test,
+            test_address) = read_images.read_in_images(self.directory_input,
                     self.directory_labels,
                     self.predict_train_set)
         else:
@@ -55,7 +57,8 @@ class Read(object):
                     test_img_input,
                     test_img_labels,
                     img_group_train,
-                    img_group_test) = read_images.images_from_numpy(self.directory_input,
+                    img_group_test,
+                    test_address) = read_images.images_from_numpy(self.directory_input,
                             self.directory_labels,
                             self.predict_train_set)
 
@@ -91,13 +94,14 @@ class Read(object):
                         self.membrane_edges,
                         self.adaptive_histogram_equalization)
 
-        gen_test_set = GenerateTestSet(self.in_window_shape,
-                self.out_window_shape,
+        gen_test_set = GenerateTestSet(self.pred_window_size[0],
+                self.pred_window_size[1],
                 self.layers_3D,
                 self.classifier,
                 self.stride,
                 config_file,
-                self.pre_processed_folder)
+                self.pre_processed_folder,
+                test_address)
         gen_test_set.generate(test_img_input,labeled_in_test,labeled_out_test,img_group_test)
 
 if __name__ == '__main__':

@@ -87,6 +87,8 @@ class ImagesFromFile(object):
 	
         img_stack = np.zeros((0,self.img_size[0]**2))
 	
+        address_list = []
+        n = 0
         for directory in directory_labels:
             files_labels = sorted(glob.glob(directory+"/*.tif"),key=self.sort_key)
             if len(files_labels) == 0:
@@ -94,6 +96,7 @@ class ImagesFromFile(object):
                 exit()
 
             for File in files_labels:
+                address_list.append(File)
                 img_temp = Image.open(File)                                                        
                 img_temp_temp = np.array(img_temp.getdata()).reshape(img_temp.size)
                 img_temp_temp.flags.writeable = True
@@ -125,6 +128,7 @@ class ImagesFromFile(object):
 
         test_img_input  = img_real_stack[(total_files-self.n_test_files):]
         test_img_labels = img_stack[(total_files-self.n_test_files):]
+        test_address    = address_list[(total_files-self.n_test_files):]
 
         img_group_test = np.zeros(2,dtype=np.int32)
         img_group_test[0] = 0
@@ -135,7 +139,7 @@ class ImagesFromFile(object):
         test_img_input   = test_img_input.reshape(test_img_input.shape[0],self.img_size[0],self.img_size[1])
         test_img_labels  = test_img_labels.reshape(test_img_labels.shape[0],self.img_size[0],self.img_size[1])
 
-        return train_img_input,train_img_labels,test_img_input,test_img_labels,img_group_train,img_group_test
+        return train_img_input,train_img_labels,test_img_input,test_img_labels,img_group_train,img_group_test,test_address
 
     def images_from_numpy(self,train_file_x,train_file_y,test_file_x,test_file_y,img_group_train,img_group_test):
 

@@ -3,7 +3,8 @@ import theano
 from layers.pool_layer                    import PoolLayer
 from layers.hidden_layer                  import HiddenLayer
 from layers.logistic_sgd                  import LogisticRegression
-from layers.pool_layer import PoolLayer
+from layers.pool_layer                    import PoolLayer
+from layers.in_layer                      import InLayer
 
 class ConvNet(Functions):
     '''
@@ -11,20 +12,29 @@ class ConvNet(Functions):
     layers.
     '''
     
-    def __init__(self, rng, batch_size,layers_3D,num_kernels,kernel_sizes,x,y,input_window_shape,output_window_shape,classifier,maxoutsize = (1,1,1), params = None, dropout = [0.0,0.0,0.0,0.0], test_version = False, network = None):
+    def __init__(self, rng, batch_size,layers_3D,num_kernels,kernel_sizes,x,y,input_window_shape,output_window_shape,pred_window_size,classifier,maxoutsize = (1,1,1), params = None, dropout = [0.0,0.0,0.0,0.0], test_version = False, network = None):
         
         if test_version == False:
             self.srng = theano.tensor.shared_randomstreams.RandomStreams(
                                 rng.randint(999999))
+                                
+            in_layer = InLayer(batch_size,
+                    input_window_shape,
+                    output_window_shape,
+                    pred_window_size,
+                    layers_3D)
+                    
+            in_layer.in_layer(x,y)
+            y = in_layer.output_labeled
 
-            self.layer0_input_size  = (batch_size, layers_3D, input_window_shape[0], input_window_shape[1])           # Input size from data 
-            self.edge0              = (input_window_shape[0] - kernel_sizes[0][0] + 1)/ 2                     # New edge size
+            self.layer0_input_size  = (batch_size,layers_3D,pred_window_size[0],pred_window_size[0])          
+            self.edge0              = (pred_window_size[0] - kernel_sizes[0][0] + 1)/ 2                     # New edge size
             self.layer0_output_size = (batch_size, num_kernels[0]/maxoutsize[0], self.edge0, self.edge0)                    # Output size
-            assert ((input_window_shape[0] - kernel_sizes[0][0] + 1) % 2) == 0                                # Check pooling size
+            assert ((pred_window_size[0] - kernel_sizes[0][0] + 1) % 2) == 0                                # Check pooling size
             
             # Initialize Layer 0
             #self.layer0_input = x.reshape(self.layer0_input_size)
-            self.layer0_input = x.reshape((batch_size,layers_3D,input_window_shape[0],input_window_shape[1]))
+            self.layer0_input = in_layer.output
 
             self.layer0 = PoolLayer(rng,
                                         input=self.layer0_input,
@@ -82,8 +92,9 @@ class ConvNet(Functions):
 
             self.layer4 = LogisticRegression(input = self.dropout(self.layer3.output,p=dropout[3]),
                                             n_in  = (num_kernels[2]/maxoutsize[2]) * self.edge2 * self.edge2,
-                                            n_out = output_window_shape[0]**2,
-                                            out_window_shape = output_window_shape,
+                                            n_out = pred_window_size[1]**2,
+                                            y = y,
+                                            out_window_shape = pred_window_size[1],
                                             params = params,
                                             params_number = 4,
                                             classifier = classifier)
@@ -97,14 +108,13 @@ class ConvNet(Functions):
             self.srng = theano.tensor.shared_randomstreams.RandomStreams(
                                 rng.randint(999999))
 
-            self.layer0_input_size  = (batch_size, layers_3D, input_window_shape[0], input_window_shape[1])           # Input size from data 
-            self.edge0              = (input_window_shape[0] - kernel_sizes[0][0] + 1)/ 2                     # New edge size
+            self.layer0_input_size  = (batch_size,layers_3D,pred_window_size[0],pred_window_size[0])   
+            self.edge0              = (pred_window_size[0] - kernel_sizes[0][0] + 1)/ 2                     # New edge size
             self.layer0_output_size = (batch_size, num_kernels[0]/maxoutsize[0], self.edge0, self.edge0)                    # Output size
-            assert ((input_window_shape[0] - kernel_sizes[0][0] + 1) % 2) == 0                                # Check pooling size
+            assert ((pred_window_size[0] - kernel_sizes[0][0] + 1) % 2) == 0                                # Check pooling size
             
             # Initialize Layer 0
-            #self.layer0_input = x.reshape(self.layer0_input_size)
-            self.layer0_input = x.reshape((batch_size,layers_3D,input_window_shape[0],input_window_shape[1]))
+            self.layer0_input = x.reshape(self.layer0_input_size)
 
             self.layer0 = network.layer0.TestVersion(rng,
                                         input=self.layer0_input,
@@ -162,8 +172,9 @@ class ConvNet(Functions):
 
             self.layer4 = network.layer4.TestVersion(input = self.dropout(self.layer3.output,p=dropout[3]),
                                             n_in  = (num_kernels[2]/maxoutsize[2]) * self.edge2 * self.edge2,
-                                            n_out = output_window_shape[0]**2,
-                                            out_window_shape = output_window_shape,
+                                            n_out = pred_window_size[1]**2,
+                                            y = y,
+                                            out_window_shape = pred_window_size[1],
                                             params = params,
                                             params_number = 4,
                                             classifier = classifier)
@@ -178,6 +189,7 @@ class ConvNet(Functions):
             y,
             input_window_shape,
             output_window_shape,
+            pred_window_size,
             classifier,
             maxoutsize = (1,1,1), 
             params = None, 
@@ -193,6 +205,7 @@ class ConvNet(Functions):
                 y,
                 input_window_shape,
                 output_window_shape,
+                pred_window_size,
                 classifier,
                 maxoutsize = maxoutsize, 
                 params = params, 

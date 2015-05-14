@@ -34,22 +34,14 @@ class Sample(object):
                 x_temp, y_temp = np.zeros((0, self.in_window_shape[0]*self.in_window_shape[1])), np.zeros((0, self.out_window_shape[0]*self.out_window_shape[1])) 
                 x_temp,y_temp, diff_samples = self.sample_function(n, labeled_in, labeled_out, train_img_input,self.on_samples, self.img_group_train,on_membrane_synapse = True)
                 
-                try:
-                    self.train_x = np.vstack((self.train_x, x_temp))
-                    self.train_y = np.vstack((self.train_y, y_temp))
-                except:
-                    self.train_x = np.vstack((self.train_x, x_temp))
-                    self.train_y = np.append(self.train_y, y_temp)
+                self.train_x = np.vstack((self.train_x, x_temp))
+                self.train_y = np.vstack((self.train_y, y_temp))
 
                 x_temp, y_temp = np.zeros((0, self.in_window_shape[0]*self.in_window_shape[1])),np.zeros((0, self.out_window_shape[0]*self.out_window_shape[1])) 
                 x_temp, y_temp,diff_samples = self.sample_function(n, labeled_in, labeled_out, train_img_input, self.off_samples, self.img_group_train, on_membrane_synapse = False, diff_samples=diff_samples)
 
-                try:
-                    self.train_x = np.vstack((self.train_x, x_temp))
-                    self.train_y = np.vstack((self.train_y, y_temp))
-                except:
-                    self.train_x = np.vstack((self.train_x, x_temp))
-                    self.train_y = np.append(self.train_y, y_temp)
+                self.train_x = np.vstack((self.train_x, x_temp))
+                self.train_y = np.vstack((self.train_y, y_temp))
 
         np.save(self.pre_processed_folder + 'x_train.npy',self.train_x)
         np.save(self.pre_processed_folder + 'y_train.npy',self.train_y)

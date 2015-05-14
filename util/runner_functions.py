@@ -4,7 +4,7 @@ import yaml
 import cPickle
 import theano
 import time
-import scipy.signal
+from scipy import signal
 
 from pre_process.pre_process               import Read 
 
@@ -44,6 +44,7 @@ class RunnerFunctions(object):
             print "Generating Train/Test Set..."
             read = Read(self.in_window_shape, 
                     self.out_window_shape, 
+                    self.pred_window_size,
                     self.stride, 
                     self.img_size, 
                     self.classifier, 
@@ -82,7 +83,7 @@ class RunnerFunctions(object):
 
     # --------------------------------------------------------------------------
     def get_locals(self, global_data_map, custom_data_map):
-        for key in ["hyper-parameters", "image-data", "optimizer-data", "classifier", "weights", "main"]:
+        for key in ["hyper-parameters", "image-data", "optimizer-data", "classifier", "weights", "main","evaluation"]:
             locals().update(global_data_map[key])
             if key in custom_data_map:
                 locals().update(custom_data_map[key])
@@ -164,7 +165,7 @@ class RunnerFunctions(object):
     # --------------------------------------------------------------------------
     def predict_set(self,predict,n_batches,number_pixels = None):
                                 
-        output = np.zeros((0,self.out_window_shape[0]*self.out_window_shape[1]))
+        output = np.zeros((0,self.pred_window_size[1]**2))
 
         start_test_timer = time.time()
         for i in xrange(n_batches):
@@ -178,28 +179,69 @@ class RunnerFunctions(object):
         return output
 
     # --------------------------------------------------------------------------
-    def evaluate(self,pred,ground_truth,eval_window_size = 6):
+    def evaluate(self,pred,ground_truth,eval_window_size = None):
+        eval_window_size = self.eval_window_size
+
         ground_truth = ground_truth[:pred.shape[0]]
-        #eval_window = np.ones((eval_window_size,eval_window_size))
+        eval_window = np.ones((eval_window_size,eval_window_size))
 
-        #if ground_truth.ndim == 2:
-        #    ground_truth = ground_truth.reshape(ground_truth.shape[0],int(np.sqrt(ground_truth.shape[1])),int(np.sqrt(ground_truth.shape[1])))
-        #    pred = pred.reshape(ground_truth.shape)
+        # Reshape
+        if ground_truth.ndim == 2:
+            ground_truth = ground_truth.reshape(ground_truth.shape[0],int(np.sqrt(ground_truth.shape[1])),int(np.sqrt(ground_truth.shape[1])))
+            pred = pred.reshape(ground_truth.shape)
 
-        #error = 0
-        #for n in xrange(pred.shape[0]):
-        #    pred         = scipy.signal.convolve2d(pred[n],eval_window,mode="valid")/float(eval_window_size**2)
-        #    ground_truth = scipy.signal.convolve2d(ground_truth[n],eval_window,mode="valid")/float(eval_window_size**2)
+        # Calculate pixel-wise error
+        pixel_error = np.mean(np.abs(pred-ground_truth))
 
-        #    error += np.mean(np.abs(pred-ground_truth))
+        # Calculate window-wise error
+        windowed_error = 0
+        for n in xrange(pred.shape[0]):
+            pred_conv         = signal.convolve2d(pred[n],eval_window,mode="valid")/float(eval_window_size**2)
+            ground_truth_conv = signal.convolve2d(ground_truth[n],eval_window,mode="valid")/float(eval_window_size**2)
+            pred_conv          = pred_conv[::eval_window_size,::eval_window_size]
+            ground_truth_conv  = ground_truth_conv[::eval_window_size,::eval_window_size]
 
-        #return error
-        return np.mean(np.abs(pred-ground_truth))
+            windowed_error += np.mean(np.abs(pred_conv-ground_truth_conv))
 
+        windowed_error = windowed_error/float(pred.shape[0])
+
+        return pixel_error,windowed_error
+
+    # --------------------------------------------------------------------------
+    def evaluate_F1_watershed(self):
+
+        # Load in test-addresses
+        f = file(self.pre_processed_folder + "test_adress.dat", 'rb')
+        test_adress = cPickle.load(f)
+        f.close()
+        print test_adress
+
+    # --------------------------------------------------------------------------
     def write_last_run(self,ID_folder):
         latest_run = open('latest_run.txt', 'w')
         latest_run.write(ID_folder + "\n")
         latest_run.close()
+
+    # --------------------------------------------------------------------------
+    def write_results(self, 
+            error_pixel_before, 
+            error_window_before, 
+            error_pixel_after, 
+            error_window_after):
+
+        results_file = open(self.results_folder + "results.txt", "w")
+
+        results_file.write("Pixel-error before averaging: " + str(error_pixel_before) + "\n")
+        results_file.write("Window-error before averaging: " + str(error_window_before) + "\n")
+        results_file.write("Pixel-error after averaging: " + str(error_pixel_after) + "\n")
+        results_file.write("Window-error after averaging: " + str(error_window_after) + "\n")
+
+        results_file.close()
+
+    # --------------------------------------------------------------------------
+    def write_parameters(self):
+        pass
+
 
 
 

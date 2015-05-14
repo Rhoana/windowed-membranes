@@ -41,19 +41,27 @@ class PoolLayer(object):
                 # Initialize biases
                 b = theano.shared(params[b_name], name = b_name, borrow=True)
             else:
-                # Design random matrix
-                random_matrix = f.make_random_matrix(filter_shape, poolsize)
+               # there are "num input feature maps * filter height * filter width"
+               # inputs to each hidden unit
+               fan_in = numpy.prod(filter_shape[1:])
+               # each unit in the lower layer receives a gradient from:
+               # "num output feature maps * filter height * filter width" /
+               #   pooling size
+               fan_out = (filter_shape[0] * numpy.prod(filter_shape[2:]) /
+                          numpy.prod(poolsize))
+               # initialize weights with random weights
+               W_bound = numpy.sqrt(6. / (fan_in + fan_out))
+               W = theano.shared(
+                   numpy.asarray(
+                       rng.uniform(low=-W_bound, high=W_bound, size=filter_shape),
+                       dtype=theano.config.floatX
+                   ),
+                   borrow=True
+               )
 
-                # Initialize weights 
-                W = theano.shared(
-                    numpy.asarray(random_matrix, dtype=theano.config.floatX),
-                    name = W_name,
-                    borrow=True
-                )
-
-                # Initialize biases
-                b_values = numpy.zeros((filter_shape[0],), dtype=theano.config.floatX)
-                b = theano.shared(value=b_values, name = b_name, borrow=True)
+               # the bias is a 1D tensor -- one bias per output feature map
+               b_values = numpy.zeros((filter_shape[0],), dtype=theano.config.floatX)
+               b = theano.shared(value=b_values, borrow=True)
 
         self.W = W
         self.b = b

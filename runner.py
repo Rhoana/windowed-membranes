@@ -16,6 +16,8 @@ from pre_process.pre_process               import Read
 from models.conv_net     import ConvNet 
 from util.helper_functions import Functions as f 
 
+from layers.in_layer import InLayer
+
 class ConvNetClassifier(RunnerFunctions):
     
     def __init__(self,params = {}):
@@ -45,6 +47,18 @@ class ConvNetClassifier(RunnerFunctions):
         if self.predict_only == False:
             train_set_x,train_set_y = data[0],data[2]
             n_train_batches         = train_set_x.get_value(borrow=True).shape[0]
+
+        in_layer = InLayer(30,[82,82],[82,82],[64,48],1)
+        in_layer.in_layer(train_set_x[0:30],train_set_y[0:30])
+        
+        #n = 0
+        #import matplotlib.pyplot as plt
+        #plt.figure()
+        #plt.imshow(in_layer.output.eval()[n,0],cmap=plt.cm.gray)
+        #plt.figure()
+        #plt.imshow(in_layer.output_labeled.eval()[n].reshape(48,48),cmap=plt.cm.gray)
+        #plt.show()
+        #exit()
 
         valid_set_x,valid_set_y = data[1],data[3]
         n_valid_batches         = valid_set_x.get_value(borrow=True).shape[0]
@@ -80,6 +94,7 @@ class ConvNetClassifier(RunnerFunctions):
                 y,
                 self.in_window_shape,
                 self.out_window_shape,
+                self.pred_window_size,
                 self.classifier,
                 maxoutsize = self.maxoutsize, 
                 params = self.params, 
@@ -94,6 +109,7 @@ class ConvNetClassifier(RunnerFunctions):
                 y,
                 self.in_window_shape,
                 self.out_window_shape,
+                self.pred_window_size,
                 self.classifier,
                 maxoutsize = self.maxoutsize, 
                 params = self.params, 
@@ -101,7 +117,7 @@ class ConvNetClassifier(RunnerFunctions):
                 dropout = [0.,0.,0.,0.5])
 
         # Initialize parameters and functions
-        cost        = conv_net.layer4.negative_log_likelihood(y,self.penalty_factor) # Cost function
+        cost        = conv_net.layer4.negative_log_likelihood(self.penalty_factor)  # Cost function
         self.params = conv_net.params                                                # List of parameters
         grads       = T.grad(cost, self.params)                                     # Gradient
         index       = T.lscalar()                                                   # Index
@@ -126,7 +142,8 @@ class ConvNetClassifier(RunnerFunctions):
 
             # Initialize result arrays
             cost_results = []
-            val_results  = []
+            val_results_pixel  = []
+            val_results_window  = []
             time_results = []
 
             predict_val = self.init_predict(valid_set_x,conv_net_test,self.batch_size,x,index)
@@ -155,19 +172,20 @@ class ConvNetClassifier(RunnerFunctions):
                     costs             = [train_model(i) for i in xrange(n_train_batches)]
                     epoch_cost = np.mean(costs)
                     output_val = self.predict_set(predict_val,n_valid_batches)
-                    epoch_val  = self.evaluate(output_val,valid_set_y.get_value(borrow=True))
+                    error_pixel,error_window = self.evaluate(output_val,valid_set_y.get_value(borrow=True))
                     
                     t2 = time.time()
                     epoch_time = (t2-t1)/60.
 
                     cost_results.append(epoch_cost)
-                    val_results.append(epoch_val)
+                    val_results_pixel.append(error_pixel)
+                    val_results_window.append(error_window)
                     time_results.append(epoch_time)
 
                     # store parameters
                     self.save_params(self.get_params(), self.path)
 
-                    print "Epoch {}    Training Cost: {:.5}   Validation Error: {:.5}    Time (epoch/total): {:.2} mins".format(epoch + 1, epoch_cost, epoch_val, epoch_time)
+                    print "Epoch {}    Training Cost: {:.5}   Validation Error (pixel/window): {:.5}/{:.5}    Time (epoch/total): {:.2} mins".format(epoch + 1, epoch_cost, error_pixel,error_window, epoch_time)
             except KeyboardInterrupt:
                 print 'Exiting solver ...'
                 print ''
@@ -176,11 +194,12 @@ class ConvNetClassifier(RunnerFunctions):
             end_time = time.time()
             end_epochs = epoch+1
 
-        #results    = np.zeros((3, len(cost_results)))
-        #results[0] = np.array(cost_results)
-        #results[1] = np.array(val_results)
-        #results[2] = np.array(time_results)
-        #np.save(self.results_folder + 'results.npy', results)
+        results    = np.zeros((4, len(cost_results)))
+        results[0] = np.array(cost_results)
+        results[1] = np.array(val_results_pixel)
+        results[2] = np.array(val_results_window)
+        results[3] = np.array(time_results)
+        np.save(self.results_folder + 'results.npy', results)
         
         # Timer information
         number_test_pixels  = test_set_y.get_value(borrow=True).shape[0]*test_set_y.get_value(borrow=True).shape[1]
@@ -190,27 +209,31 @@ class ConvNetClassifier(RunnerFunctions):
         output       = self.predict_set(predict_test,n_test_batches,number_pixels=number_test_pixels)
 
         # Evaluate error
-        error = self.evaluate(output,test_set_y.get_value(borrow=True))
-        print 'Error after averaging: ', error
+        error_pixel_before,error_window_before = self.evaluate(output,test_set_y.get_value(borrow=True))
+        print 'Error before averaging (pixel/window): ' + str(error_pixel_before) + "/" + str(error_window_before)
 
         # Post-process
         table = np.load(self.pre_processed_folder + 'table.npy')
-        output = output.reshape((output.shape[0],self.out_window_shape[0],self.out_window_shape[1]))
+        output = output.reshape((output.shape[0],self.pred_window_size[1],self.pred_window_size[1]))
         output, y = post.post_process(train_set_x.get_value(borrow=True),
                 train_set_y.get_value(borrow=True),
                 output,
                 test_set_y.get_value(borrow=True),
                 table,
                 self.img_size,
-                self.in_window_shape,
-                self.out_window_shape,
+                self.pred_window_size[0],
+                self.pred_window_size[1],
                 self.classifier)
 
         # Evalute error after post-processing 
-        error = self.evaluate(output,y)
-        print 'Error after averaging: ', error
+        error_pixel_after,error_window_after = self.evaluate(output,y)
+        print 'Error after averaging (pixel/window): ' + str(error_pixel_after) + "/" + str(error_window_after)
+
+        self.evaluate_F1_watershed()
         
         # Save and write
+        self.write_results(error_pixel_before,error_window_before,error_pixel_after,error_window_after)
+        self.write_parameters()
         np.save(self.results_folder + 'output.npy', output)
         np.save(self.results_folder + 'y.npy', y)
         self.write_last_run(self.ID_folder)
