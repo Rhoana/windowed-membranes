@@ -24,8 +24,9 @@ class BuildTrainTestSet(object):
         if test_set_y.ndim != 2:
             test_set_y  = test_set_y.reshape(test_set_y.shape[0],1)
 
+        n_test_batches = test_set_x.shape[0]
+
         valid_set_size = self.n_val_samples
-        
         
         rand_val = np.random.permutation(range(test_set_x.shape[0]))[:valid_set_size]
         valid_set_x = np.zeros((valid_set_size,test_set_x.shape[1]))
@@ -41,7 +42,8 @@ class BuildTrainTestSet(object):
             print "Error: Unable to load pre-processed train set."
             exit()
 
-        print 'Size of training-set: ',train_set_x.shape[0]
+        n_train_samples = train_set_x.shape[0]
+        print 'Size of training-set: ',n_train_samples
 
         if train_set_y.ndim != 2:
             train_set_y = train_set_y.reshape(train_set_y.shape[0],1)
@@ -74,7 +76,7 @@ class BuildTrainTestSet(object):
         
         list_it = [train_set_x,valid_set_x,train_set_y,valid_set_y]
         
-        return list_it
+        return list_it, n_test_batches,n_train_samples
 
     def build_test_set(self):
         try:

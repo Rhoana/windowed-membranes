@@ -41,15 +41,14 @@ class ConvNetClassifier(RunnerFunctions):
 
         # load in and pre-process data
         preProcess              = BuildTrainTestSet(self.n_validation_samples,self.pre_processed_folder)
-        data                    = preProcess.build_train_val_set()
-        data2                   = preProcess.build_test_set()
+        data,n_test_batches,n_train_samples     = preProcess.build_train_val_set()
         
         if self.predict_only == False:
             train_set_x,train_set_y = data[0],data[2]
             n_train_batches         = train_set_x.get_value(borrow=True).shape[0]
 
-        in_layer = InLayer(30,[82,82],[82,82],[64,48],1)
-        in_layer.in_layer(train_set_x[0:30],train_set_y[0:30])
+        #in_layer = InLayer(30,[82,82],[82,82],[64,48],1)
+        #in_layer.in_layer(train_set_x[0:30],train_set_y[0:30])
         
         #n = 0
         #import matplotlib.pyplot as plt
@@ -62,8 +61,6 @@ class ConvNetClassifier(RunnerFunctions):
 
         valid_set_x,valid_set_y = data[1],data[3]
         n_valid_batches         = valid_set_x.get_value(borrow=True).shape[0]
-        test_set_x,test_set_y   = data2[0],data2[1]
-        n_test_batches          = test_set_x.get_value(borrow=True).shape[0]
 
         print 'Initializing neural network ...'
 
@@ -201,9 +198,13 @@ class ConvNetClassifier(RunnerFunctions):
         results[3] = np.array(time_results)
         np.save(self.results_folder + 'results.npy', results)
         
+        # Load test set
+        data    = preProcess.build_test_set()
+        test_set_x,test_set_y   = data[0],data[1]
+
         # Timer information
         number_test_pixels  = test_set_y.get_value(borrow=True).shape[0]*test_set_y.get_value(borrow=True).shape[1]
-        
+
         # Predict test set
         predict_test = self.init_predict(test_set_x,conv_net_test,self.batch_size,x,index)
         output       = self.predict_set(predict_test,n_test_batches,number_pixels=number_test_pixels)
@@ -229,15 +230,15 @@ class ConvNetClassifier(RunnerFunctions):
         error_pixel_after,error_window_after = self.evaluate(output,y)
         print 'Error after averaging (pixel/window): ' + str(error_pixel_after) + "/" + str(error_window_after)
 
-        self.evaluate_F1_watershed()
+        VI, F1_pixel, F1_window = self.evaluate_F1_watershed(output)
+        print "Variation of Information:", VI
         
         # Save and write
-        self.write_results(error_pixel_before,error_window_before,error_pixel_after,error_window_after)
-        self.write_parameters()
+        self.write_results(error_pixel_before,error_window_before,error_pixel_after,error_window_after,VI,F1_pixel,F1_window)
+        self.write_parameters(end_epochs,n_train_samples)
         np.save(self.results_folder + 'output.npy', output)
         np.save(self.results_folder + 'y.npy', y)
         self.write_last_run(self.ID_folder)
-
 
 if __name__ == "__main__":
     config_file = sys.argv[1] if len(sys.argv) > 1 else "default.yaml"

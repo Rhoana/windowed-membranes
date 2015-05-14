@@ -5,6 +5,14 @@ import cPickle
 import theano
 import time
 from scipy import signal
+import mahotas as mh
+
+try:
+    import partition_comparison
+    evaluate_VI = True
+except:
+    print "Unable to load package partition_comparison (needed for Variation of Information)"
+    evaluate_VI = False
 
 from pre_process.pre_process               import Read 
 
@@ -98,6 +106,7 @@ class RunnerFunctions(object):
 
         # set convolution size
         locals().update(global_data_map["network"][custom_data_map["network"]["size"]])
+        self.size = custom_data_map["network"]["size"]
         # set training data location
         locals().update(global_data_map["network"]["training-data"][custom_data_map["classifier"]["classifier"]])
         # load weights
@@ -208,13 +217,55 @@ class RunnerFunctions(object):
         return pixel_error,windowed_error
 
     # --------------------------------------------------------------------------
-    def evaluate_F1_watershed(self):
+    def evaluate_F1_watershed(self,pred):
+        
+        V1_metric = None 
+        F1_pixel  = None
+        F1_window = None
+        
+        if self.classifier == "membrane" and evaluate_VI == True:
+            def disk(radius):
+                y, x = np.ogrid[-radius:radius+1, -radius:radius+1]
+                return x**2 + y**2 <= radius**2
 
-        # Load in test-addresses
-        f = file(self.pre_processed_folder + "test_adress.dat", 'rb')
-        test_adress = cPickle.load(f)
-        f.close()
-        print test_adress
+    
+            def watershed(probs, radius):
+                sel = disk(radius)
+                minima = mh.regmin(probs, Bc=sel)
+                markers, nr_markers = mh.label(minima)
+                return mh.cwatershed(probs, markers)
+
+            def VI(putative, gold):
+                mask = gold != 0
+                VI_res = partition_comparison.variation_of_information(gold[mask], putative[mask].astype(gold.dtype))
+                return VI_res
+            
+            # Load in test-addresses
+            f = file(self.pre_processed_folder + "test_adress.dat", 'rb')
+            test_adress = cPickle.load(f)
+            f.close()
+        
+            gap = (self.in_window_shape[0]-self.pred_window_size[1])/2
+            VI_metric = 0
+            n = 0
+            for adress in test_adress:
+                ground_truth = mh.imread(adress)[gap:-gap,gap:-gap]
+            
+                radii = np.linspace(7, 65, 10) 
+                ground_truth = ground_truth.astype(np.uint16)
+                VIs = np.array([VI(watershed(pred[n], radius), ground_truth) for radius in radii])
+                VI_metric += np.min(VIs)
+            
+                n += 1 
+            
+            VI_metric /= n 
+        
+        elif self.classifier == "synapse":
+            pass
+        
+        
+        return VI_metric, F1_pixel, F1_window
+        
 
     # --------------------------------------------------------------------------
     def write_last_run(self,ID_folder):
@@ -227,7 +278,10 @@ class RunnerFunctions(object):
             error_pixel_before, 
             error_window_before, 
             error_pixel_after, 
-            error_window_after):
+            error_window_after,
+            VI,
+            F1_pixel,
+            F1_window):
 
         results_file = open(self.results_folder + "results.txt", "w")
 
@@ -235,12 +289,32 @@ class RunnerFunctions(object):
         results_file.write("Window-error before averaging: " + str(error_window_before) + "\n")
         results_file.write("Pixel-error after averaging: " + str(error_pixel_after) + "\n")
         results_file.write("Window-error after averaging: " + str(error_window_after) + "\n")
+        
+        if VI != None:
+            results_file.write("Variation of information: " + str(VI) + "\n")
+        if F1_pixel != None:
+            results_file.write("F1-score, pixel: "  + str(F1_pixel) + "\n")
+        if F1_window != None:
+            results_file.write("F1-score, window: " + str(f1_window) + "\n")
 
         results_file.close()
 
     # --------------------------------------------------------------------------
-    def write_parameters(self):
-        pass
+    def write_parameters(self,epochs,n_train_samples):
+        parameter_file = open(self.results_folder + "parameters.txt", "w")
+
+        parameter_file.write("Classifier: " + str(self.classifier) + "\n")
+        parameter_file.write("Network size: " + str(self.size) + "\n")
+        parameter_file.write("Number of epochs: " + str(epochs) + "\n")
+        parameter_file.write("Prediction window size " + str(','.join(str(v) for v in self.pred_window_size) + "\n"))
+        parameter_file.write("Stride length: " + str(self.stride) + "\n")
+        parameter_file.write("Penalty factor: " + str(self.penalty_factor) + "\n")
+        parameter_file.write("Layers_3D: " + str(self.layers_3D) + "\n")
+        parameter_file.write("Number of training samples: " + str(n_train_samples) + "\n")
+        parameter_file.write("Samples per training image: " + str(self.samples_per_image) + "\n")
+        parameter_file.write("Number of test files: " + str(self.n_test_files) + "\n")
+
+        parameter_file.close()
 
 
 
