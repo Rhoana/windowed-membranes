@@ -1,0 +1,19 @@
+hyper-parameters:
+  batch_size: 30
+  epochs: 30
+  pred_window_size: [64,24]
+  penalty_factor: 0.
+  stride: 24
+  layers_3D: 1
+image-data:
+  samples_per_image: 1000
+  n_test_files: 2
+  pre_process: !!bool True
+network:
+  size: large
+classifier:
+  classifier: "membrane"
+weights:
+  load_n_layers: -1
+main:
+  ID_folder: 2x2

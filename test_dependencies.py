@@ -8,7 +8,7 @@ import cPickle
 import yaml
 import mahotas
 import matplotlib
-import partition_comparison
+import gala
 
 print "Succesfully loaded all dependencies!"
 

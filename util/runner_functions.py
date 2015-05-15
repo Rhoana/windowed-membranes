@@ -6,13 +6,7 @@ import theano
 import time
 from scipy import signal
 import mahotas as mh
-
-try:
-    import partition_comparison
-    evaluate_VI = True
-except:
-    print "Unable to load package partition_comparison (needed for Variation of Information)"
-    evaluate_VI = False
+from gala import evaluate as ev
 
 from pre_process.pre_process               import Read 
 
@@ -223,7 +217,7 @@ class RunnerFunctions(object):
         F1_pixel  = None
         F1_window = None
         
-        if self.classifier == "membrane" and evaluate_VI == True:
+        if self.classifier == "membrane":
             def disk(radius):
                 y, x = np.ogrid[-radius:radius+1, -radius:radius+1]
                 return x**2 + y**2 <= radius**2
@@ -245,26 +239,41 @@ class RunnerFunctions(object):
             test_adress = cPickle.load(f)
             f.close()
         
-            gap = (self.in_window_shape[0]-self.pred_window_size[1])/2
-            VI_metric = 0
+            gap = (self.pred_window_size[0]-self.pred_window_size[1])/2
+            radii = np.linspace(7, 65, 10) 
+            
+            VI_metric = np.zeros((radii.size,3))
             n = 0
             for adress in test_adress:
-                ground_truth = mh.imread(adress)[gap:-gap,gap:-gap]
-            
-                radii = np.linspace(7, 65, 10) 
+                ground_truth = mh.imread(adress)
+                ground_truth = ground_truth[gap:-gap,gap:-gap]
                 ground_truth = ground_truth.astype(np.uint16)
-                VIs = np.array([VI(watershed(pred[n], radius), ground_truth) for radius in radii])
-                VI_metric += np.min(VIs)
-            
-                n += 1 
+                
+                r = 0
+                for radius in radii:
+                    # VI_metric[0] = undersegmentation error
+                    # VI_metric[1] = oversegmentation error
+                    VI_split =  ev.split_vi(watershed(pred[n], radius), ground_truth)
+                    VI_metric[r,0] += VI_split[0]
+                    VI_metric[r,1] += VI_split[1]
+                    VI_metric[r,2] += VI_split[0] + VI_split[1]
+                    r += 1
+                    
+                n += 1        
             
             VI_metric /= n 
+            
+            VI_min_pos = np.argmin(VI_metric[:,2])
+            VI_min     = VI_metric[VI_min_pos]
+            
+            np.save(self.results_folder + "VI.npy",VI_metric)
         
         elif self.classifier == "synapse":
             pass
+            
         
         
-        return VI_metric, F1_pixel, F1_window
+        return VI_min, F1_pixel, F1_window
         
 
     # --------------------------------------------------------------------------
@@ -290,11 +299,12 @@ class RunnerFunctions(object):
         results_file.write("Pixel-error after averaging: " + str(error_pixel_after) + "\n")
         results_file.write("Window-error after averaging: " + str(error_window_after) + "\n")
         
-        if VI != None:
-            results_file.write("Variation of information: " + str(VI) + "\n")
-        if F1_pixel != None:
+        if self.classifier == "membrane":
+            results_file.write("Variation of information: " + str(VI[2]) + "\n")
+            results_file.write("VI, undersegmentation error: " + str(VI[0]) + "\n")
+            results_file.write("VI, oversegmentation error: " + str(VI[1]) + "\n")
+        elif self.classifier == "synapse":
             results_file.write("F1-score, pixel: "  + str(F1_pixel) + "\n")
-        if F1_window != None:
             results_file.write("F1-score, window: " + str(f1_window) + "\n")
 
         results_file.close()

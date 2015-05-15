@@ -231,7 +231,9 @@ class ConvNetClassifier(RunnerFunctions):
         print 'Error after averaging (pixel/window): ' + str(error_pixel_after) + "/" + str(error_window_after)
 
         VI, F1_pixel, F1_window = self.evaluate_F1_watershed(output)
-        print "Variation of Information:", VI
+        print "Variation of Information:", VI[2]
+        print "VI, undersegmentation error:", VI[0]
+        print "VI, oversegmentation error:", VI[0]
         
         # Save and write
         self.write_results(error_pixel_before,error_window_before,error_pixel_after,error_window_after,VI,F1_pixel,F1_window)

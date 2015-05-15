@@ -75,14 +75,12 @@ class PoolLayer(object):
             image_shape=image_shape
         )
         
-
         # Downsampling using maxpooling
         pooled_out = downsample.max_pool_2d(
             input=conv_out,
             ds=poolsize,
             ignore_border=True
         )
-
         # Define output 
         #self.output = rectify(pooled_out + self.b.dimshuffle('x', 0,'x','x'))
         bias_out = pooled_out + self.b.dimshuffle('x', 0,'x','x')
