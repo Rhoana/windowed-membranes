@@ -2,23 +2,20 @@
 Convolutional network for membrane and synapse detection.
 
 ### Dependencies
-* Numpy
-* Scipy
-* Theano
-* YAML
-* PIL
+* [Numpy](http://www.numpy.org)
+* [Scipy](http://www.scipy.org)
+* [Theano](http://www.deeplearning.net/software/theano/)
+* [YAML](http://pyyaml.org)
+* [PIL](http://www.pythonware.com/products/pil/)
 * [Mahotas](http://mahotas.readthedocs.org/en/latest/)
-* Matplotlib (for plotting)
-* [Parition Comparison](https://github.com/thouis/partition-comparison) (for evaluation)
+* [Gala](https://pypi.python.org/pypi/gala/0.1.1)
+* [Matplotlib](http://matplotlib.org) (for plotting)
+
 
 ### Install
 Install and upgrade all dependencies:
 
-`pip install -U numpy theano matplotlib pyyaml pil scipy mahotas`
-
-Clone and install partition comparison (evaluation only):
-
-`git clone https://github.com/thouis/partition-comparison`
+`pip install -U numpy theano matplotlib pyyaml pil scipy mahotas gala`
 
 Clone repository:
 
