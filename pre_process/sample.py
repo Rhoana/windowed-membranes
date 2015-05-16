@@ -1,6 +1,5 @@
 import numpy as np
 import random
-import mahotas as mh
 import os
 
 class Sample(object):

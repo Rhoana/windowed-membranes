@@ -19,7 +19,6 @@ from util.helper_functions import Functions as f
 from layers.in_layer import InLayer
 
 class ConvNetClassifier(RunnerFunctions):
-    
     def __init__(self,params = {}):
         self.params = params
 
@@ -230,20 +229,20 @@ class ConvNetClassifier(RunnerFunctions):
         error_pixel_after,error_window_after = self.evaluate(output,y)
         print 'Error after averaging (pixel/window): ' + str(error_pixel_after) + "/" + str(error_window_after)
 
-        VI, F1_pixel, F1_window = self.evaluate_F1_watershed(output)
-        print "Variation of Information:", VI[2]
-        print "VI, undersegmentation error:", VI[0]
-        print "VI, oversegmentation error:", VI[0]
-        
         # Save and write
-        self.write_results(error_pixel_before,error_window_before,error_pixel_after,error_window_after,VI,F1_pixel,F1_window)
+        self.write_results(error_pixel_before,error_window_before,error_pixel_after,error_window_after)
         self.write_parameters(end_epochs,n_train_samples)
         np.save(self.results_folder + 'output.npy', output)
         np.save(self.results_folder + 'y.npy', y)
         self.write_last_run(self.ID_folder)
+        np.save(self.results_folder + 'pred_window_size.npy', self.pred_window_size)
 
 if __name__ == "__main__":
     config_file = sys.argv[1] if len(sys.argv) > 1 else "default.yaml"
     conv_net_classifier = ConvNetClassifier()
     conv_net_classifier.init(config_file)
     conv_net_classifier.run()
+
+
+
+
