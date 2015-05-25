@@ -38,33 +38,6 @@ class RunnerFunctions(object):
         else:
             pass
 
-    # --------------------------------------------------------------------------
-    def generate_train_test_set(self, config_file):
-        if self.pre_process == True:
-            print "Generating Train/Test Set..."
-            read = Read(self.in_window_shape, 
-                    self.out_window_shape, 
-                    self.pred_window_size,
-                    self.stride, 
-                    self.img_size, 
-                    self.classifier, 
-                    self.n_train_files, 
-                    self.n_test_files, 
-                    self.samples_per_image, 
-                    self.on_ratio, 
-                    self.directory_input, 
-                    self.directory_labels, 
-                    self.membrane_edges,
-                    self.layers_3D, 
-                    self.adaptive_histogram_equalization,
-                    self.pre_processed_folder,
-                    self.predict_only,
-                    self.predict_train_set,
-                    self.images_from_numpy)
-
-            read.generate_data(config_file)
-        else:
-            pass
 
     # --------------------------------------------------------------------------
     def get_params(self):
@@ -166,7 +139,10 @@ class RunnerFunctions(object):
     # --------------------------------------------------------------------------
     def predict_set(self,predict,n_batches,number_pixels = None):
                                 
-        output = np.zeros((0,self.pred_window_size[1]**2))
+        if self.classifier == "membrane" or self.classifier == "synapse":
+            output = np.zeros((0,self.pred_window_size[1]**2))
+        elif self.classifier == "membrane_synapse":
+            output = np.zeros((0,2*self.pred_window_size[1]**2))
 
         start_test_timer = time.time()
         for i in xrange(n_batches):
@@ -188,23 +164,53 @@ class RunnerFunctions(object):
 
         # Reshape
         if ground_truth.ndim == 2:
-            ground_truth = ground_truth.reshape(ground_truth.shape[0],int(np.sqrt(ground_truth.shape[1])),int(np.sqrt(ground_truth.shape[1])))
+            if self.classifier in ["membrane","synapse"]:
+                window_size = int(np.sqrt(ground_truth.shape[1]))
+                ground_truth = ground_truth.reshape(ground_truth.shape[0],1,window_size,window_size)
+            elif self.classifier == "membrane_synapse":
+                window_size = int(np.sqrt(ground_truth.shape[1]/2))
+                ground_truth = ground_truth.reshape(ground_truth.shape[0],2,window_size,window_size)
             pred = pred.reshape(ground_truth.shape)
 
-        # Calculate pixel-wise error
-        pixel_error = np.mean(np.abs(pred-ground_truth))
+            if window_size < eval_window_size:
+                eval_window_size = window_size
 
-        # Calculate window-wise error
-        windowed_error = 0
-        for n in xrange(pred.shape[0]):
-            pred_conv         = signal.convolve2d(pred[n],eval_window,mode="valid")/float(eval_window_size**2)
-            ground_truth_conv = signal.convolve2d(ground_truth[n],eval_window,mode="valid")/float(eval_window_size**2)
-            pred_conv          = pred_conv[::eval_window_size,::eval_window_size]
-            ground_truth_conv  = ground_truth_conv[::eval_window_size,::eval_window_size]
+        if self.classifier in ["membrane","synapse"]:
+            # Calculate pixel-wise error
+            pixel_error = np.mean(np.abs(pred-ground_truth))
 
-            windowed_error += np.mean(np.abs(pred_conv-ground_truth_conv))
+            # Calculate window-wise error
+            windowed_error = 0
+            for n in xrange(pred.shape[0]):
+                pred_conv         = signal.convolve2d(pred[n,0],eval_window,mode="valid")/float(eval_window_size**2)
+                ground_truth_conv = signal.convolve2d(ground_truth[n,0],eval_window,mode="valid")/float(eval_window_size**2)
+                pred_conv          = pred_conv[::eval_window_size,::eval_window_size]
+                ground_truth_conv  = ground_truth_conv[::eval_window_size,::eval_window_size]
 
-        windowed_error = windowed_error/float(pred.shape[0])
+                windowed_error += np.mean(np.abs(pred_conv-ground_truth_conv))
+
+            windowed_error = windowed_error/float(pred.shape[0])
+
+        elif self.classifier=="membrane_synapse":
+            # Calculate pixel-wise error
+            pixel_error = []
+            pixel_error.append(np.mean(np.abs(pred[:,0]-ground_truth[:,0])))
+            pixel_error.append(np.mean(np.abs(pred[:,1]-ground_truth[:,1])))
+
+            windowed_error = []
+            for m in xrange(2):
+                # Calculate window-wise error
+                win_error = 0
+                for n in xrange(pred.shape[0]):
+                    pred_conv         = signal.convolve2d(pred[n,m],eval_window,mode="valid")/float(eval_window_size**2)
+                    ground_truth_conv = signal.convolve2d(ground_truth[n,m],eval_window,mode="valid")/float(eval_window_size**2)
+                    pred_conv          = pred_conv[::eval_window_size,::eval_window_size]
+                    ground_truth_conv  = ground_truth_conv[::eval_window_size,::eval_window_size]
+
+                    win_error += np.mean(np.abs(pred_conv-ground_truth_conv))
+
+                win_error = win_error/float(pred.shape[0])
+                windowed_error.append(win_error)
 
         return pixel_error,windowed_error
 
@@ -224,13 +230,13 @@ class RunnerFunctions(object):
             error_window_after):
 
         results_file = open(self.results_folder + "results.txt", "w")
-
         results_file.write("Pixel-error before averaging: " + str(error_pixel_before) + "\n")
         results_file.write("Window-error before averaging: " + str(error_window_before) + "\n")
         results_file.write("Pixel-error after averaging: " + str(error_pixel_after) + "\n")
         results_file.write("Window-error after averaging: " + str(error_window_after) + "\n")
-
         results_file.close()
+
+        np.save(self.results_folder + 'pred_window_size.npy', self.pred_window_size)
 
     # --------------------------------------------------------------------------
     def write_parameters(self,epochs,n_train_samples):

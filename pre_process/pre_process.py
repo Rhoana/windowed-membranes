@@ -28,10 +28,9 @@ class Read(object):
         self.layers_3D                       = layers_3D
         self.adaptive_histogram_equalization = adaptive_histogram_equalization
         self.pre_processed_folder            = pre_processed_folder
-
-        self.predict_only = predict_only
-        self.predict_train_set = predict_train_set
-        self.images_from_numpy = images_from_numpy
+        self.predict_only                    = predict_only
+        self.predict_train_set               = predict_train_set
+        self.images_from_numpy               = images_from_numpy
 
     def generate_data(self, config_file):
 
@@ -51,19 +50,20 @@ class Read(object):
             test_address) = read_images.read_in_images(self.directory_input,
                     self.directory_labels,
                     self.predict_train_set)
-        else:
-            (train_img_input,
-                    train_img_labels,
-                    test_img_input,
-                    test_img_labels,
-                    img_group_train,
-                    img_group_test,
-                    test_address) = read_images.images_from_numpy(self.directory_input,
-                            self.directory_labels,
-                            self.predict_train_set)
+        #else:
+        #    (train_img_input,
+        #            train_img_labels,
+        #            test_img_input,
+        #            test_img_labels,
+        #            img_group_train,
+        #            img_group_test,
+        #            test_address) = read_images.images_from_numpy(self.directory_input,
+        #                    self.directory_labels,
+        #                    self.predict_train_set)
 
         # Process train images, find synapses, edges and do edge processing
         # (blurring, widening) if specified
+
         process = Process()
         if self.predict_only == False:
             (train_img_input,

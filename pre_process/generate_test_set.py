@@ -16,8 +16,12 @@ class GenerateTestSet(object):
     def generate(self,test_img_input,labeled_in,labeled_out,img_group_test):
         
         # Define training arrays 
-        test_x = np.zeros((0,self.layers_3D*self.in_window_shape**2))
-        test_y = np.zeros((0,self.out_window_shape**2))
+        if self.classifier == "membrane" or self.classifier == "synapse":
+            test_x = np.zeros((0,self.layers_3D*self.in_window_shape**2))
+            test_y = np.zeros((0,self.out_window_shape**2))
+        elif self.classifier == "membrane_synapse":
+            test_x = np.zeros((0,self.layers_3D*self.in_window_shape**2))
+            test_y = np.zeros((0,2*self.out_window_shape**2))
 
         table = np.zeros((0,3),dtype=np.int32)
 
@@ -49,9 +53,13 @@ class GenerateTestSet(object):
         np.save(self.pre_processed_folder + 'y_test.npy',test_y)
         np.save(self.pre_processed_folder + 'table.npy',table)
 
+        print test_x.shape
+        print test_y.shape
+            
         print 'Done ... '
 
     def generate_test_membrane_synapse(self,thick_edged, img_real, img_number):
+
         
         # Define indexes for 1D and 3D 
         if self.layers_3D == 1:
@@ -65,13 +73,22 @@ class GenerateTestSet(object):
         offset = self.in_window_shape/2
         diff  = (self.in_window_shape-self.out_window_shape)
 
-        thick_edged = thick_edged[img_number,(diff/2):-(diff/2),(diff/2):-(diff/2)]
+        thick_edged = thick_edged[img_number,:,(diff/2):-(diff/2),(diff/2):-(diff/2)]
         
-        number = thick_edged.shape[0]/self.stride - (self.out_window_shape/self.stride - 1)
+        number = thick_edged.shape[1]/self.stride - (self.out_window_shape/self.stride - 1)
+
 
         img_samples = np.zeros((number**2,self.layers_3D*self.in_window_shape**2))
-        labels = np.zeros((number**2,self.out_window_shape**2))
         table = np.zeros((number**2,3),dtype=np.int32)
+
+        if self.classifier == "membrane" or self.classifier == "synapse":
+            out_dim = self.out_window_shape**2
+            labels = np.zeros((number**2,out_dim))
+            lab_dim = 1
+        elif self.classifier == "membrane_synapse":
+            out_dim = 2*self.out_window_shape**2
+            labels = np.zeros((number**2,out_dim))
+            lab_dim = 2
 
         table_number = 0
         for n in xrange(number):
@@ -88,7 +105,8 @@ class GenerateTestSet(object):
                 label_end_x   = self.stride*m + self.out_window_shape
 
                 img_samples[table_number,:] = img_real[index,img_start_y:img_end_y,img_start_x:img_end_x].reshape(1,self.layers_3D*self.in_window_shape**2)
-                labels[table_number,:]      = thick_edged[label_start_y:label_end_y, label_start_x:label_end_x].reshape(1,self.out_window_shape**2)
+                labels[table_number,:]      = thick_edged[:,label_start_y:label_end_y, label_start_x:label_end_x].reshape(1,lab_dim*self.out_window_shape**2)
+                
 
                 table[table_number,0] = img_number
                 table[table_number,1] = label_start_y

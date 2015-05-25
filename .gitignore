@@ -1,5 +1,6 @@
 *.npy
 *.pyc
+*.png
 *.tif
 .DS_Store
 .idea

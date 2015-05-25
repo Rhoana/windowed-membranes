@@ -83,7 +83,7 @@ class PoolLayer(object):
         )
         # Define output 
         #self.output = rectify(pooled_out + self.b.dimshuffle('x', 0,'x','x'))
-        bias_out = pooled_out + self.b.dimshuffle('x', 0,'x','x')
+        bias_out = self.rectify(pooled_out + self.b.dimshuffle('x', 0,'x','x'))
         
         # Maxout
         maxout_out = None
@@ -94,7 +94,7 @@ class PoolLayer(object):
             else:
                 maxout_out = T.maximum(maxout_out, t)
         
-        self.output = self.rectify(maxout_out)
+        self.output = maxout_out
 
         # Store parameters
         self.params = [self.W, self.b]

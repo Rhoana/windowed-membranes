@@ -22,7 +22,8 @@ class ConvNet(Functions):
                     input_window_shape,
                     output_window_shape,
                     pred_window_size,
-                    layers_3D)
+                    layers_3D,
+                    classifier)
                     
             in_layer.in_layer(x,y)
             y = in_layer.output_labeled
@@ -90,9 +91,20 @@ class ConvNet(Functions):
                                     params_number = 3)
 
 
-            self.layer4 = LogisticRegression(input = self.dropout(self.layer3.output,p=dropout[3]),
+            if classifier in ["membrane","synapse"]:
+                self.layer4 = LogisticRegression(input = self.dropout(self.layer3.output,p=dropout[3]),
                                             n_in  = (num_kernels[2]/maxoutsize[2]) * self.edge2 * self.edge2,
                                             n_out = pred_window_size[1]**2,
+                                            y = y,
+                                            out_window_shape = pred_window_size[1],
+                                            params = params,
+                                            params_number = 4,
+                                            classifier = classifier)
+
+            elif classifier == "membrane_synapse":
+                self.layer4 = LogisticRegression(input = self.dropout(self.layer3.output,p=dropout[3]),
+                                            n_in  = (num_kernels[2]/maxoutsize[2]) * self.edge2 * self.edge2,
+                                            n_out = 2*pred_window_size[1]**2,
                                             y = y,
                                             out_window_shape = pred_window_size[1],
                                             params = params,
@@ -170,9 +182,19 @@ class ConvNet(Functions):
                                     params_number = 3)
 
 
-            self.layer4 = network.layer4.TestVersion(input = self.dropout(self.layer3.output,p=dropout[3]),
+            if classifier in ["membrane","synapse"]:
+                self.layer4 = network.layer4.TestVersion(input = self.dropout(self.layer3.output,p=dropout[3]),
                                             n_in  = (num_kernels[2]/maxoutsize[2]) * self.edge2 * self.edge2,
                                             n_out = pred_window_size[1]**2,
+                                            y = y,
+                                            out_window_shape = pred_window_size[1],
+                                            params = params,
+                                            params_number = 4,
+                                            classifier = classifier)
+            elif classifier == "membrane_synapse":
+                self.layer4 = network.layer4.TestVersion(input = self.dropout(self.layer3.output,p=dropout[3]),
+                                            n_in  = (num_kernels[2]/maxoutsize[2]) * self.edge2 * self.edge2,
+                                            n_out = 2*pred_window_size[1]**2,
                                             y = y,
                                             out_window_shape = pred_window_size[1],
                                             params = params,

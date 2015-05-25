@@ -27,8 +27,29 @@ class ConvNetClassifier(RunnerFunctions):
 
     def run(self):
 
-        # Generate training set and test set
-        self.generate_train_test_set(config_file)
+        if self.pre_process == True:
+            print "Generating Train/Test Set..."
+            read = Read(self.in_window_shape, 
+                    self.out_window_shape, 
+                    self.pred_window_size,
+                    self.stride, 
+                    self.img_size, 
+                    self.classifier, 
+                    self.n_train_files, 
+                    self.n_test_files, 
+                    self.samples_per_image, 
+                    self.on_ratio, 
+                    self.directory_input, 
+                    self.directory_labels, 
+                    self.membrane_edges,
+                    self.layers_3D, 
+                    self.adaptive_histogram_equalization,
+                    self.pre_processed_folder,
+                    self.predict_only,
+                    self.predict_train_set,
+                    self.images_from_numpy)
+
+            read.generate_data(config_file)
 
         # Load weight layers
         self.load_layers(self.load_n_layers)
@@ -46,15 +67,28 @@ class ConvNetClassifier(RunnerFunctions):
             train_set_x,train_set_y = data[0],data[2]
             n_train_batches         = train_set_x.get_value(borrow=True).shape[0]
 
-        #in_layer = InLayer(30,[82,82],[82,82],[64,48],1)
-        #in_layer.in_layer(train_set_x[0:30],train_set_y[0:30])
+        n = 0
+        #import matplotlib.pyplot as plt
+        #plt.figure()
+        #plt.imshow(train_set_x.eval()[n].reshape(82,82),cmap=plt.cm.gray)
+        #plt.figure()
+        #plt.imshow(train_set_y.eval()[n].reshape(1,82,82)[0],cmap=plt.cm.gray)
+        #plt.figure()
+        #plt.imshow(train_set_y.eval()[n].reshape(2,82,82)[1],cmap=plt.cm.gray)
+        #plt.show()
+        #exit()
+
+        in_layer = InLayer(30,[82,82],[82,82],[64,48],1,self.classifier)
+        in_layer.in_layer(train_set_x[0:30],train_set_y[0:30])
         
-        #n = 0
+        #n = 5
         #import matplotlib.pyplot as plt
         #plt.figure()
         #plt.imshow(in_layer.output.eval()[n,0],cmap=plt.cm.gray)
         #plt.figure()
-        #plt.imshow(in_layer.output_labeled.eval()[n].reshape(48,48),cmap=plt.cm.gray)
+        #plt.imshow(in_layer.output_labeled.eval()[n].reshape(1,48,48)[0],cmap=plt.cm.gray)
+        #plt.figure()
+        #plt.imshow(in_layer.output_labeled.eval()[n].reshape(2,48,48)[1],cmap=plt.cm.gray)
         #plt.show()
         #exit()
 
@@ -68,6 +102,7 @@ class ConvNetClassifier(RunnerFunctions):
             print 'Error: Batch size is larger than size of validation set.'
         
         # adjust batch size
+        print n_test_batches
         while n_test_batches % self.batch_size != 0:
             self.batch_size += 1 
         print 'Batch size: ',self.batch_size
@@ -114,7 +149,7 @@ class ConvNetClassifier(RunnerFunctions):
 
         # Initialize parameters and functions
         cost        = conv_net.layer4.negative_log_likelihood(self.penalty_factor)  # Cost function
-        self.params = conv_net.params                                                # List of parameters
+        self.params = conv_net.params                                               # List of parameters
         grads       = T.grad(cost, self.params)                                     # Gradient
         index       = T.lscalar()                                                   # Index
         
@@ -128,7 +163,7 @@ class ConvNetClassifier(RunnerFunctions):
             train_model = theano.function(                                          
                         [index],                                                    
                             cost,                                                       
-                            updates = updates,                                          
+                            updates = updates,      
                             givens  = {                                                 
                                         x: train_set_x[perm[index * self.batch_size: (index + 1) * self.batch_size]], 
                                         y: train_set_y[perm[index * self.batch_size: (index + 1) * self.batch_size]]
@@ -137,10 +172,9 @@ class ConvNetClassifier(RunnerFunctions):
 
 
             # Initialize result arrays
-            cost_results = []
-            val_results_pixel  = []
-            val_results_window  = []
-            time_results = []
+            cost_results        = []
+            val_results_pixel   = []
+            time_results        = []
 
             predict_val = self.init_predict(valid_set_x,conv_net_test,self.batch_size,x,index)
 
@@ -169,19 +203,21 @@ class ConvNetClassifier(RunnerFunctions):
                     epoch_cost = np.mean(costs)
                     output_val = self.predict_set(predict_val,n_valid_batches)
                     error_pixel,error_window = self.evaluate(output_val,valid_set_y.get_value(borrow=True))
-                    
+
                     t2 = time.time()
                     epoch_time = (t2-t1)/60.
 
                     cost_results.append(epoch_cost)
                     val_results_pixel.append(error_pixel)
-                    val_results_window.append(error_window)
                     time_results.append(epoch_time)
 
                     # store parameters
                     self.save_params(self.get_params(), self.path)
 
-                    print "Epoch {}    Training Cost: {:.5}   Validation Error (pixel/window): {:.5}/{:.5}    Time (epoch/total): {:.2} mins".format(epoch + 1, epoch_cost, error_pixel,error_window, epoch_time)
+                    if self.classifier in ["membrane","synapse"]:
+                        print "Epoch {}    Training Cost: {:.5}   Validation Error (pixel/window): {:.5}/{:.5}    Time (epoch/total): {:.2} mins".format(epoch + 1, epoch_cost, error_pixel,error_window, epoch_time)
+                    else:
+                        print "Epoch {}    Training Cost: {:.5}   Validation Error, Membrane (pixel/window): {:.5}/{:.5}    Validation Error, Synapse (pixel/window): {:.5}/{:.5}   Time (epoch/total): {:.2} mins".format(epoch + 1, epoch_cost, error_pixel[0],error_window[0],error_pixel[1],error_window[1], epoch_time)
             except KeyboardInterrupt:
                 print 'Exiting solver ...'
                 print ''
@@ -190,12 +226,14 @@ class ConvNetClassifier(RunnerFunctions):
             end_time = time.time()
             end_epochs = epoch+1
 
-        results    = np.zeros((4, len(cost_results)))
-        results[0] = np.array(cost_results)
-        results[1] = np.array(val_results_pixel)
-        results[2] = np.array(val_results_window)
-        results[3] = np.array(time_results)
-        np.save(self.results_folder + 'results.npy', results)
+        try:
+            results    = np.zeros((4, len(cost_results)))
+            results[0] = np.array(cost_results)
+            results[1] = np.array(val_results_pixel)
+            results[2] = np.array(time_results)
+            np.save(self.results_folder + 'results.npy', results)
+        except:
+            pass
         
         # Load test set
         data    = preProcess.build_test_set()
@@ -214,7 +252,7 @@ class ConvNetClassifier(RunnerFunctions):
 
         # Post-process
         table = np.load(self.pre_processed_folder + 'table.npy')
-        output = output.reshape((output.shape[0],self.pred_window_size[1],self.pred_window_size[1]))
+
         output, y = post.post_process(train_set_x.get_value(borrow=True),
                 train_set_y.get_value(borrow=True),
                 output,
@@ -235,7 +273,6 @@ class ConvNetClassifier(RunnerFunctions):
         np.save(self.results_folder + 'output.npy', output)
         np.save(self.results_folder + 'y.npy', y)
         self.write_last_run(self.ID_folder)
-        np.save(self.results_folder + 'pred_window_size.npy', self.pred_window_size)
 
 if __name__ == "__main__":
     config_file = sys.argv[1] if len(sys.argv) > 1 else "default.yaml"

@@ -8,7 +8,8 @@ class Process(object):
 
         if classifier == 'membrane':
             if membrane_edges == 'WideEdges':
-                labeled_out = self.thick_edge(labeled_in)
+                labeled_out = np.zeros(labeled_in.shape)
+                labeled_out[:,0] = self.thick_edge(labeled_in[:,0])
             elif membrane_edges == 'GaussianBlur':
                 labeled_out = self.membrane_gaussian(train_img_labels)
             else:
@@ -17,6 +18,14 @@ class Process(object):
 
         elif classifier == 'synapse':
             labeled_out = labeled_in
+
+        elif classifier == "membrane_synapse":
+            if membrane_edges == "WideEdges":
+                labeled_out = np.zeros(labeled_in.shape)
+                labeled_out[:,0] = self.thick_edge(labeled_in[:,0])
+                labeled_out[:,1] = labeled_in[:,1]
+            else:
+                print "Warning: thin edge"
 
         #if adaptive_histogram_equalization:
         #    train_img_input = self.eqh(train_img_input)
@@ -28,11 +37,6 @@ class Process(object):
             labeled_out[n] = self.thick_edge(labeled_in[n])
         return labeled_out
 
-    def membrane_thickedge(self,labeled_in,sigma=3):
-        for n in range(train_img_labels.shape[0]):
-            labeled_out[n] = scipy.ndimage.gaussian_filter(labeled_in[n], sigma=sigma)
-            labeled_out[n] = labeled_out[n]/labeled_out[n].max()
-        return labeled_out
 
     def eqh(self,train_img_input):
         for n in range(train_img_input.shape[0]):

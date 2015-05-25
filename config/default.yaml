@@ -2,12 +2,14 @@ hyper-parameters:
   batch_size: 30
   epochs: 30
   pred_window_size: [64,48]
-  penalty_factor: 1.
-  stride: 24
+  penalty_factor: 0.
+  stride: 48
   layers_3D: 1
+optimizer-data:
+    optimizer: 'stochasticGradient'
 image-data:
   samples_per_image: 200
-  n_test_files: 3
+  n_test_files: 1
   pre_process: !!bool False
 network:
   size: small

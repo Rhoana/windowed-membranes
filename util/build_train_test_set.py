@@ -28,7 +28,12 @@ class BuildTrainTestSet(object):
 
         valid_set_size = self.n_val_samples
         
+        if valid_set_size >test_set_x.shape[0]:
+            valid_set_size = test_set_x.shape[0]
+            print "Warning: Validation set is re-adjusted to:",test_set_x.shape[0]
         rand_val = np.random.permutation(range(test_set_x.shape[0]))[:valid_set_size]
+        
+        
         valid_set_x = np.zeros((valid_set_size,test_set_x.shape[1]))
         valid_set_y = np.zeros((valid_set_size,test_set_y.shape[1]))
         for n in xrange(len(rand_val)):

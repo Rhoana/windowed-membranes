@@ -2,6 +2,9 @@ import theano
 import theano.tensor as T
 import numpy as np
 
+from util.utils import *
+from collections import OrderedDict
+
 class Functions(object):
     '''
     Class containing helper functions for the ConvNet class.
@@ -37,10 +40,12 @@ class Functions(object):
                 temp_y[perm2[n]] = temp_y[perm2[n],:,::-1]
 
             ######### NEED TO FIX ROTATIONS!!!!!!!!!!!!!!!!
-            #for n in xrange(flip2_n):
-            #    rand = np.random.randint(1,4)
-            #    temp_x[perm2[n]] = np.rot90(temp_x[perm2[n]],rand)
-            #    temp_y[perm2[n]] = np.rot90(temp_y[perm2[n]],rand)
+            for n in xrange(flip2_n):
+                rand = np.random.randint(1,4)
+
+                for m in xrange(temp_x.shape[1]):
+                    temp_x[perm2[n],m] = np.rot90(temp_x[perm2[n],m],rand)
+                temp_y[perm2[n]] = np.rot90(temp_y[perm2[n]],rand)
 
             temp_x = temp_x.reshape(temp_x.shape[0],layers_3D*temp_x.shape[2]**2)
             temp_y = temp_y.reshape(temp_y.shape[0],temp_y.shape[1]**2)
@@ -75,38 +80,10 @@ class Functions(object):
 
             temp_x = temp_x.reshape(temp_x.shape[0],layers_3D*temp_x.shape[2]**2)
 
-        train_set_x.set_value(temp_x, borrow = True)
-        train_set_y.set_value(temp_y, borrow = True)
+        train_set_x.set_value(temp_x.astype(np.float32), borrow = True)
+        train_set_y.set_value(temp_y.astype(np.float32), borrow = True)
 
         return train_set_x,train_set_y
-
-    @staticmethod
-    def make_random_matrix(size,poolsize):
-        threshold = 100
-        
-        fan_in = np.prod(size[1:])                                   
-        fan_out = (size[0] * np.prod(size[2:]) /
-        np.prod(poolsize))                                        
-                                                            
-        # Initialize weight matrix                                              
-        W_bound = np.sqrt(6. / (fan_in + fan_out))    
-
-        max_cond = np.infty                                                  
-        count = 1
-
-        random_matrix = np.zeros(size)
-
-        for n in xrange(size[0]):
-            while max_cond > threshold:                                             
-                temp = np.random.uniform(low=-W_bound, high=W_bound, size=size[1:])
-                U, s, V = np.linalg.svd(temp, full_matrices=True)       
-                                                                    
-                max_cond = np.max(np.max(s,axis=1)/np.min(s,axis=1))       
-                count += 1
-
-            random_matrix[n] = temp
-                                                                    
-        return random_matrix
     
     def dropout(self,X,p=0.5):
         '''
@@ -137,7 +114,72 @@ class Functions(object):
         '''
         return T.maximum(X,0.)
         
-    def RMSprop(self,cost, params, lr = 0.001, rho=0.9, epsilon=1e-6):
+        
+    def init_optimizer(self, optimizer, cost, params, optimizerData):
+        '''
+        Choose between different optimizers 
+        '''
+        if optimizer == 'stochasticGradient':
+            try:
+                updates = self.stochasticGradient(cost, 
+                                              params,
+                                              lr      = optimizerData['learning_rate'])
+            except:
+                updates = self.stochasticGradient(cost, 
+                                              params)
+                print "Warning: Using default optimizer settings."
+                
+        elif optimizer == 'rmsprop':    
+            try:
+                updates = self.rmsprop(cost, params, 
+                                                 lr      = optimizerData['learning_rate'],
+                                                 rho     = optimizerData['rho'],
+                                                 epsilon = optimizerData['epsilon'])
+            except:
+                updates = self.rmsprop(cost, params)
+                print "Warning: Using default optimizer settings."
+        
+        elif optimizer == 'Adam':    
+            try:
+                updates = self.Adam(cost, params, 
+                                                 lr      = optimizerData['learning_rate'],
+                                                 b1      = optimizerData['b1'],
+                                                 b2      = optimizerData['b2'],
+                                                 e       = optimizerData['e'])
+            except:
+                updates = self.Adam(cost, params)
+                print "Warning: Using default optimizer settings."
+        
+        elif optimizer == 'adadelta':    
+            try:
+                updates = self.adadelta(cost, params, 
+                                                 lr      = optimizerData['learning_rate'],
+                                                 rho     = optimizerData['rho'],
+                                                 epsilon = optimizerData['epsilon'])
+            except:
+                updates = self.adadelta(cost, params)
+                print "Warning: Using default optimizer settings."
+        elif optimizer == 'adagrad':    
+            try:
+                updates = self.adagrad(cost, params, 
+                                                 lr      = optimizerData['learning_rate'],
+                                                 epsilon = optimizerData['epsilon'])
+            except:
+                updates = self.adagrad(cost, params)
+                print "Warning: Using default optimizer settings."
+                
+        elif optimizer == 'momentum':    
+            try:
+                updates = self.momentum(cost, params, 
+                                                 lr      = optimizerData['learning_rate'],
+                                                 momentum = optimizerData['momentum'])
+            except:
+                updates = self.momentum(cost, params)
+                print "Warning: Using default optimizer settings."
+                          
+        return updates
+
+    def rmsprop(self,cost, params, lr = 0.01, rho=0.9, epsilon=1e-6):
         '''
         RMSprop - optimization (http://nbviewer.ipython.org/github/udibr/Theano-Tutorials/blob/master/notebooks/4_modern_net.ipynb)
         '''
@@ -153,31 +195,118 @@ class Functions(object):
             updates.append((p, p - lr * g))
             
         return updates
-    
-    def stochasticGradient(self,cost,params,lr):
+        
+    def stochasticGradient(self,cost,params,lr = 0.1):
         '''
         Stochastic Gradient Descent
         '''
-        updates = [
-            (param_i, param_i - lr * grad_i)  # <=== SGD update step
-            for param_i, grad_i in zip(params, grads)
-        ]
-        return updates       
-        
-    def init_optimizer(self, optimizer, cost, params, optimizerData):
-        '''
-        Choose between different optimizers 
-        '''
-        if optimizer == 'stochasticGradient':
-            updates = self.stochasticGradient(cost, 
-                                              params,
-                                              lr      = optimizerData['learning_rate'])
-        elif optimizer == 'RMSprop':    
-            updates = self.RMSprop(cost, params, optimizerData['learning_rate'],
-                                                 rho     = optimizerData['rho'],
-                                                 epsilon = optimizerData['epsilon'])
-                                                 
+        grads = T.grad(cost, params)
+        updates = OrderedDict()
+
+        for param, grad in zip(params, grads):
+            updates[param] = param - lr * grad
+
         return updates
+        
+    def Adam(self,cost, params, lr=0.0002, b1=0.1, b2=0.001, e=1e-8):
+        """
+        lasagne
+        """
+        updates = []
+        grads = T.grad(cost, params)
+        i = theano.shared(floatX(0.))
+        i_t = i + 1.
+        fix1 = 1. - (1. - b1)**i_t
+        fix2 = 1. - (1. - b2)**i_t
+        lr_t = lr * (T.sqrt(fix2) / fix1)
+        for p, g in zip(params, grads):
+         m = theano.shared(p.get_value() * 0.)
+         v = theano.shared(p.get_value() * 0.)
+         m_t = (b1 * g) + ((1. - b1) * m)
+         v_t = (b2 * T.sqr(g)) + ((1. - b2) * v)
+         g_t = m_t / (T.sqrt(v_t) + e)
+         p_t = p - (lr_t * g_t)
+         updates.append((m, m_t))
+         updates.append((v, v_t))
+         updates.append((p, p_t))
+        updates.append((i, i_t))
+        return updates    
+    
+    def adadelta(self,cost, params, learning_rate=0.01, rho=0.95, epsilon=1e-6):
+
+        grads = T.grad(cost,params)
+        updates = OrderedDict()
+
+        for param, grad in zip(params, grads):
+            value = param.get_value(borrow=True)
+            # accu: accumulate gradient magnitudes
+            accu = theano.shared(np.zeros(value.shape, dtype=value.dtype),
+                                 broadcastable=param.broadcastable)
+            # delta_accu: accumulate update magnitudes (recursively!)
+            delta_accu = theano.shared(np.zeros(value.shape, dtype=value.dtype),
+                                       broadcastable=param.broadcastable)
+
+            # update accu (as in rmsprop)
+            accu_new = rho * accu + (1 - rho) * grad ** 2
+            updates[accu] = accu_new
+
+            # compute parameter update, using the 'old' delta_accu
+            update = (grad * T.sqrt(delta_accu + epsilon) /
+                      T.sqrt(accu_new + epsilon))
+            updates[param] = param - learning_rate * update
+
+            # update delta_accu (as accu, but accumulating updates)
+            delta_accu_new = rho * delta_accu + (1 - rho) * update ** 2
+            updates[delta_accu] = delta_accu_new
+
+        return updates  
+        
+    def adagrad(self, cost, params, learning_rate=0.01, epsilon=1e-6):
+        """
+        lasagne
+        """
+
+        grads = T.grad(cost, params)
+        updates = OrderedDict()
+
+        for param, grad in zip(params, grads):
+            value = param.get_value(borrow=True)
+            accu = theano.shared(np.zeros(value.shape, dtype=value.dtype),
+                                 broadcastable=param.broadcastable)
+            accu_new = accu + grad ** 2
+            updates[accu] = accu_new
+            updates[param] = param - (learning_rate * grad /
+                                      T.sqrt(accu_new + epsilon))
+
+        return updates
+        
+
+    def apply_momentum(self, updates, params=None, momentum=0.9):
+        """
+        lasagne
+        """
+
+        if params is None:
+            params = updates.keys()
+        updates = OrderedDict(updates)
+
+        for param in params:
+            value = param.get_value(borrow=True)
+            velocity = theano.shared(np.zeros(value.shape, dtype=value.dtype),
+                                     broadcastable=param.broadcastable)
+            x = momentum * velocity + updates[param]
+            updates[velocity] = x - param
+            updates[param] = x
+
+        return updates
+
+
+    def momentum(self, cost, params, lr = 0.1, momentum=0.9):
+        """
+        lasagne
+        """
+        updates = self.stochasticGradient(cost, params, lr = lr)
+        return self.apply_momentum(updates, momentum=momentum)
 
 
 

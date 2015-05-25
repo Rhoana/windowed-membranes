@@ -67,14 +67,20 @@ class LogisticRegression(object):
         Return cost function
         '''
         # Calculate sum of derivatives
-        test = self.p_y_given_x.reshape((self.p_y_given_x.shape[0],self.out_window_shape,self.out_window_shape))
-        test_dx = (test[:,1:,:] - test[:,:-1,:]).reshape((self.p_y_given_x.shape[0],(self.out_window_shape-1)*self.out_window_shape))
-        test_dy = (test[:,:,1:] - test[:,:,:-1]).reshape((self.p_y_given_x.shape[0],(self.out_window_shape-1)*self.out_window_shape))
-        term = T.mean(T.abs_(test_dx)+T.abs_(test_dy),axis=1)
+        #if self.classifier in ["membrane","synapse"]:
+        #    test = self.p_y_given_x.reshape((self.p_y_given_x.shape[0],1,self.out_window_shape,self.out_window_shape))
+        #    test_dx = (test[:,:,1:,:] - test[:,:,:-1,:]).reshape((self.p_y_given_x.shape[0],(self.out_window_shape-1)*self.out_window_shape))
+        #    test_dy = (test[:,:,:,1:] - test[:,:,:,:-1]).reshape((self.p_y_given_x.shape[0],(self.out_window_shape-1)*self.out_window_shape))
+        #elif self.classifier == "membrane_synapse":
+        #    test = self.p_y_given_x.reshape((self.p_y_given_x.shape[0],2,self.out_window_shape,self.out_window_shape))
+        #    test_dx = (test[:,:,1:,:] - test[:,:,:-1,:]).reshape((self.p_y_given_x.shape[0],2*(self.out_window_shape-1)*self.out_window_shape))
+        #    test_dy = (test[:,:,:,1:] - test[:,:,:,:-1]).reshape((self.p_y_given_x.shape[0],2*(self.out_window_shape-1)*self.out_window_shape))
+
+        #term = T.mean(T.abs_(test_dx)+T.abs_(test_dy),axis=1)
         
         # Calculate cost function
         L = - T.mean( self.y* T.log(self.p_y_given_x) + (1 - self.y) * T.log(1 - self.p_y_given_x), axis=1)
-        return T.mean(L+term*penatly_factor)
+        return T.mean(L) #+term*penatly_factor)
 
     def errors(self, y):
         '''

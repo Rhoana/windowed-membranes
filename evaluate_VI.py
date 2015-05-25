@@ -1,7 +1,6 @@
 import mahotas as mh
 import cPickle
 from gala import evaluate as ev
-
 import numpy as np
 
 def disk(radius):
@@ -22,7 +21,7 @@ def VI(putative, gold):
 
 def evaluate_VI(adress):
     
-    pred = np.load(adress + "/results/output.npy")
+    pred = np.load(adress + "/results/output.npy")[:,0]
     pred_window_size = np.load(adress + "/results/pred_window_size.npy")
         
     # Load in test-addresses
@@ -57,7 +56,9 @@ def evaluate_VI(adress):
     VI_min_pos = np.argmin(VI_metric[:,2])
     VI_min     = VI_metric[VI_min_pos]
 
-    print VI_min
+    print "Variation of Information (VI):",VI_min[2]
+    print "VI, undersegmentation error:", VI_min[0]
+    print "VI, oversegmentation error:", VI_min[1]
     
     np.save(adress + "/results/VI.npy",VI_metric)
     

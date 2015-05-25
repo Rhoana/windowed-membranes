@@ -55,6 +55,10 @@ network:
       directory_input: ['data/train-input']
       directory_labels: ['data/train-labels']
       folder_name: 'edges'
+    membrane_synapse:
+      directory_input: ['data/train-input']
+      directory_labels: ['data/train-labels']
+      folder_name: 'mem_syn'
     synapse:
       directory_input: ['data/train-input'] #,'data/AC3-input']
       directory_labels: ['data/train-labels'] #,'data/AC3-labels']
