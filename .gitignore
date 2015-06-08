@@ -2,6 +2,8 @@
 *.pyc
 *.png
 *.tif
+*.out
+*.err
 .DS_Store
 .idea
 .ipynb_checkpoints/*
