@@ -2,7 +2,15 @@ from skimage import exposure
 import numpy as np
 class Process(object):
 
-    def process_images(self,train_img_input,train_img_labels,classifier,membrane_edges,adaptive_histogram_equalization):
+    def process_images(self,img_input,train_img_labels,classifier,membrane_edges):
+        """
+        Process images
+        
+        Output:
+        - img_input
+        - labeled_in - labeled data used for sampling of training set
+        - labeled_out - labeled data used as ground truth during training 
+        """
 
         labeled_in = train_img_labels
 
@@ -27,12 +35,12 @@ class Process(object):
             else:
                 print "Warning: thin edge"
 
-        #if adaptive_histogram_equalization:
-        #    train_img_input = self.eqh(train_img_input)
-
-        return train_img_input,labeled_in,labeled_out
+        return img_input,labeled_in,labeled_out
 
     def membrane_gaussian(self,labeled_in,sigma=3):
+        """
+        Gaussian smoothed edges
+        """
         for n in range(train_img_labels.shape[0]):
             labeled_out[n] = self.thick_edge(labeled_in[n])
         return labeled_out
@@ -49,21 +57,22 @@ class Process(object):
             labeled_out[n] = self.thick_edge_one(labeled_in[n])
         return labeled_out
 
-    def thick_edge_one(self,imarray):
-        thickarray = np.zeros(np.shape(imarray))
+    def thick_edge_one(self,img):
+        """
+        Thick labeled edge
+        """
+        thick = np.zeros(np.shape(img))
 
-        for n in xrange(1,imarray.shape[0]-1):
-            for m in xrange(1,imarray.shape[1]-1):
-                if imarray[n,m] == 1:
-                    thickarray[n,m] = 1
-                    thickarray[n-1,m] = 1
-                    thickarray[n-1,m] = 1
-                    thickarray[n,m+1] = 1
-                    thickarray[n,m-1] = 1
-                    thickarray[n-1,m-1] = 1
-                    thickarray[n-1,m+1] = 1
-                    thickarray[n+1,m+1] = 1
-                    thickarray[n+1,m-1] = 1
-        return thickarray
-
-        return train_img_input,labeled_in,labeled_out
+        for n in xrange(1,img.shape[0]-1):
+            for m in xrange(1,img.shape[1]-1):
+                if img[n,m] == 1:
+                    thick[n,m] = 1
+                    thick[n-1,m] = 1
+                    thick[n-1,m] = 1
+                    thick[n,m+1] = 1
+                    thick[n,m-1] = 1
+                    thick[n-1,m-1] = 1
+                    thick[n-1,m+1] = 1
+                    thick[n+1,m+1] = 1
+                    thick[n+1,m-1] = 1
+        return thick

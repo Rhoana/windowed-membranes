@@ -5,6 +5,8 @@ import numpy
 import theano
 import theano.tensor as T
 
+from lib import init
+
 class LogisticRegression(object):
     """
     Logistic regression class
@@ -53,6 +55,9 @@ class LogisticRegression(object):
                     name=b_name,
                     borrow=True
                 )
+                
+                #W = theano.shared(init.HeNormal((n_in, n_out)), borrow=True, name = W_name)
+                #b = theano.shared(init.constant((n_out,), 0.), borrow=True, name = b_name)
 
         self.W = W
         self.b = b

@@ -7,6 +7,8 @@ import numpy
 import theano
 import theano.tensor as T
 
+from lib import init
+
 
 class HiddenLayer(object):
     def __init__(self, rng, input, n_in, n_out, W = None, b = None, 
@@ -18,14 +20,14 @@ class HiddenLayer(object):
         # Define input
         self.input = input
 
+        W_name = "W" + str(params_number)
+        b_name = "b" + str(params_number)
+    
         if W == None or b == None:
-            W_name = "W" + str(params_number)
-            b_name = "b" + str(params_number)
-        
             # Initialize weights
             if params.has_key(W_name) and params.has_key(b_name): 
                 W = theano.shared(params[W_name], name=W_name, borrow=True)
-            
+        
                 # Initialize biasea
                 b = theano.shared(params[b_name], name=b_name, borrow=True)
 
@@ -40,10 +42,13 @@ class HiddenLayer(object):
                 )
 
                 W = theano.shared(value=W_values, name=W_name, borrow=True)
-            
+        
                 # Initialize biasea
                 b_values = numpy.zeros((n_out,), dtype=theano.config.floatX)
                 b = theano.shared(value=b_values, name=b_name, borrow=True)
+            
+                W = theano.shared(init.HeNormal((n_in, n_out)), borrow=True, name = W_name)
+                b = theano.shared(init.constant((n_out,), 0.), borrow=True, name = b_name)
 
         self.W = W
         self.b = b

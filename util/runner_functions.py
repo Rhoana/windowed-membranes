@@ -6,9 +6,10 @@ import theano
 import time
 from scipy import signal
 
-from pre_process.pre_process               import Read 
+#from pre_process.pre_process               import PreProcess
 
 class RunnerFunctions(object):
+
     # --------------------------------------------------------------------------
     def load_params(self, path):
         f = file(path, 'r')
@@ -126,93 +127,6 @@ class RunnerFunctions(object):
                 print "Error: Unable to find pre-processed data"
                 exit()
 
-    # --------------------------------------------------------------------------
-    def init_predict(self,data_set,net,batch_size,x,index):
-        predict = theano.function(inputs=[index], 
-                                outputs=net.layer4.prediction(),
-                                givens = {
-                                    x: data_set[index * self.batch_size: (index + 1) * self.batch_size]
-                                    }
-                                )
-        return predict
-
-    # --------------------------------------------------------------------------
-    def predict_set(self,predict,n_batches,number_pixels = None):
-                                
-        if self.classifier == "membrane" or self.classifier == "synapse":
-            output = np.zeros((0,self.pred_window_size[1]**2))
-        elif self.classifier == "membrane_synapse":
-            output = np.zeros((0,2*self.pred_window_size[1]**2))
-
-        start_test_timer = time.time()
-        for i in xrange(n_batches):
-            output = np.vstack((output,predict(i)))
-        stop_test_timer = time.time()
-
-        if number_pixels != None:
-            pixels_per_second = number_pixels/(stop_test_timer-start_test_timer)
-            print "Prediction, pixels per second:  ", pixels_per_second
-
-        return output
-
-    # --------------------------------------------------------------------------
-    def evaluate(self,pred,ground_truth,eval_window_size = None):
-        eval_window_size = self.eval_window_size
-
-        ground_truth = ground_truth[:pred.shape[0]]
-        eval_window = np.ones((eval_window_size,eval_window_size))
-
-        # Reshape
-        if ground_truth.ndim == 2:
-            if self.classifier in ["membrane","synapse"]:
-                window_size = int(np.sqrt(ground_truth.shape[1]))
-                ground_truth = ground_truth.reshape(ground_truth.shape[0],1,window_size,window_size)
-            elif self.classifier == "membrane_synapse":
-                window_size = int(np.sqrt(ground_truth.shape[1]/2))
-                ground_truth = ground_truth.reshape(ground_truth.shape[0],2,window_size,window_size)
-            pred = pred.reshape(ground_truth.shape)
-
-            if window_size < eval_window_size:
-                eval_window_size = window_size
-
-        if self.classifier in ["membrane","synapse"]:
-            # Calculate pixel-wise error
-            pixel_error = np.mean(np.abs(pred-ground_truth))
-
-            # Calculate window-wise error
-            windowed_error = 0
-            for n in xrange(pred.shape[0]):
-                pred_conv         = signal.convolve2d(pred[n,0],eval_window,mode="valid")/float(eval_window_size**2)
-                ground_truth_conv = signal.convolve2d(ground_truth[n,0],eval_window,mode="valid")/float(eval_window_size**2)
-                pred_conv          = pred_conv[::eval_window_size,::eval_window_size]
-                ground_truth_conv  = ground_truth_conv[::eval_window_size,::eval_window_size]
-
-                windowed_error += np.mean(np.abs(pred_conv-ground_truth_conv))
-
-            windowed_error = windowed_error/float(pred.shape[0])
-
-        elif self.classifier=="membrane_synapse":
-            # Calculate pixel-wise error
-            pixel_error = []
-            pixel_error.append(np.mean(np.abs(pred[:,0]-ground_truth[:,0])))
-            pixel_error.append(np.mean(np.abs(pred[:,1]-ground_truth[:,1])))
-
-            windowed_error = []
-            for m in xrange(2):
-                # Calculate window-wise error
-                win_error = 0
-                for n in xrange(pred.shape[0]):
-                    pred_conv         = signal.convolve2d(pred[n,m],eval_window,mode="valid")/float(eval_window_size**2)
-                    ground_truth_conv = signal.convolve2d(ground_truth[n,m],eval_window,mode="valid")/float(eval_window_size**2)
-                    pred_conv          = pred_conv[::eval_window_size,::eval_window_size]
-                    ground_truth_conv  = ground_truth_conv[::eval_window_size,::eval_window_size]
-
-                    win_error += np.mean(np.abs(pred_conv-ground_truth_conv))
-
-                win_error = win_error/float(pred.shape[0])
-                windowed_error.append(win_error)
-
-        return pixel_error,windowed_error
 
         
 

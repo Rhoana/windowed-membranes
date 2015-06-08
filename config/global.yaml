@@ -35,21 +35,36 @@ theano:
     device: gpu
     nvcc: fastmath
 network:
-  large:
+  conv_large:
+    net: ConvNet
     num_kernels: [64,64,128]
     kernel_sizes: [[5, 5], [3, 3], [3,3]]
     maxoutsize: [2,2,4]
     dropout: [0.2,0.2,0.2,0.5]
-  medium:
+  conv_medium:
+    net: ConvNet
     num_kernels: [64,64,64]
     kernel_sizes: [[5, 5], [3, 3], [3,3]]
     maxoutsize: [1,1,1]
     dropout: [0.2,0.2,0.2,0.5]
-  small:
+  conv_small:
+    net: ConvNet
     num_kernels: [10,10,10]
     kernel_sizes: [[5, 5], [3, 3], [3,3]]
     maxoutsize: [1,1,1]
     dropout: [0.2,0.2,0.2,0.5]
+  fully_con:
+    net: FullyCon
+    num_kernels: [0,0,0]
+    kernel_sizes: [[0, 0], [0, 0], [0,0]]
+    maxoutsize: [0,0,0]
+    dropout: [0.0,0.0,0.0,0.0]
+  fully_con_compressed:
+    net: FullyConCompressed
+    num_kernels: [0,0,0]
+    kernel_sizes: [[0, 0], [0, 0], [0,0]]
+    maxoutsize: [0,0,0]
+    dropout: [0.0,0.0,0.0,0.0]
   training-data:
     membrane:
       directory_input: ['data/train-input']

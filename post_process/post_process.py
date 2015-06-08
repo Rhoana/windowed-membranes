@@ -1,7 +1,7 @@
 import numpy as np
 import sys
 
-def post_process(x_train,y_train,output,y,table,img_shape,in_window_shape,out_window_shape,classifier,n_train_examples = 100):
+def post_process(output,y,table,img_shape,in_window_shape,out_window_shape,classifier,n_train_examples = 100):
     
     diff = in_window_shape-out_window_shape
     nr_images    = np.max(table[:,0]) + 1 

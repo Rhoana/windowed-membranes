@@ -3,7 +3,7 @@ import cPickle
 
 class GenerateTestSet(object):
 
-    def __init__(self,in_window_shape,out_window_shape,layers_3D,classifier,stride,config_file,pre_processed_folder, test_adress):
+    def __init__(self,in_window_shape,out_window_shape,layers_3D,classifier,stride,config_file,pre_processed_folder, test_address, test_img_input, labeled_out, img_group_test):
         self.in_window_shape = in_window_shape
         self.out_window_shape = out_window_shape
         self.layers_3D = layers_3D
@@ -11,54 +11,23 @@ class GenerateTestSet(object):
         self.stride = stride
         self.config_file = config_file
         self.pre_processed_folder = pre_processed_folder
-        self.test_adress = test_adress
+        self.test_address = test_address
 
-    def generate(self,test_img_input,labeled_in,labeled_out,img_group_test):
+        self.test_img_input = test_img_input
+        self.labeled_out = labeled_out
+        self.img_group_test = img_group_test 
+
+    def generate(self,img_number):
         
-        # Define training arrays 
-        if self.classifier == "membrane" or self.classifier == "synapse":
-            test_x = np.zeros((0,self.layers_3D*self.in_window_shape**2))
-            test_y = np.zeros((0,self.out_window_shape**2))
-        elif self.classifier == "membrane_synapse":
-            test_x = np.zeros((0,self.layers_3D*self.in_window_shape**2))
-            test_y = np.zeros((0,2*self.out_window_shape**2))
+        if img_number not in self.img_group_test or self.layers_3D == 1:
+            img_samples,labels,table = self.generate_test_sample(self.labeled_out,self.test_img_input,img_number)
 
-        table = np.zeros((0,3),dtype=np.int32)
+        else:
+            del self.test_address[image_number]
 
-        # Define test samples
-        img_number = 0
-        test_adress = []
-        for n in range(test_img_input.shape[0]):
-            try:
-                if n not in img_group_test or self.layers_3D == 1:
+        return img_samples, labels, table
 
-                    img_samples,labels,table_temp = self.generate_test_membrane_synapse(labeled_out,test_img_input,img_number)
-
-                    test_x = np.vstack((test_x,img_samples))
-                    test_y = np.vstack((test_y,labels))
-                    table = np.vstack((table,table_temp))
-                    
-                    img_number += 1
-                    test_adress.append(self.test_adress[n])
-            except MemoryError:
-                print "Warning: Memory error, unable to process all images in test set."
-                break
-
-        self.test_adress = test_adress
-        f = file(self.pre_processed_folder +  'test_adress.dat', 'wb')
-        cPickle.dump(self.test_adress,f, protocol=cPickle.HIGHEST_PROTOCOL)
-        f.close()
-
-        np.save(self.pre_processed_folder + 'x_test.npy',test_x)
-        np.save(self.pre_processed_folder + 'y_test.npy',test_y)
-        np.save(self.pre_processed_folder + 'table.npy',table)
-
-        print test_x.shape
-        print test_y.shape
-            
-        print 'Done ... '
-
-    def generate_test_membrane_synapse(self,thick_edged, img_real, img_number):
+    def generate_test_sample(self,thick_edged, img_real, img_number):
 
         
         # Define indexes for 1D and 3D 
@@ -108,10 +77,16 @@ class GenerateTestSet(object):
                 labels[table_number,:]      = thick_edged[:,label_start_y:label_end_y, label_start_x:label_end_x].reshape(1,lab_dim*self.out_window_shape**2)
                 
 
-                table[table_number,0] = img_number
+                table[table_number,0] = 0
                 table[table_number,1] = label_start_y
                 table[table_number,2] = label_start_x
                 table_number += 1
 
         return img_samples,labels,table
+
+    def end_test_generation(self):
+        
+        f = file(self.pre_processed_folder +  'test_adress.dat', 'wb')
+        cPickle.dump(self.test_address,f, protocol=cPickle.HIGHEST_PROTOCOL)
+        f.close()
 

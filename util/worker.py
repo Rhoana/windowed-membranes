@@ -6,17 +6,17 @@ import os
 from scipy import signal
 import theano
 
-from images_from_file  import ImagesFromFile
-from process           import Process
-from sample            import Sample
-from generate_test_set import GenerateTestSet
+from pre_process.images_from_file  import ImagesFromFile
+from pre_process.process           import Process
+from pre_process.sample            import Sample
+from pre_process.generate_test_set import GenerateTestSet
 
 import util.helper_functions as f 
 import post_process.post_process as post 
 
 rng              = np.random.RandomState(42)
 
-class PreProcess(object):
+class Worker(object):
 
     def __init__(self,in_window_shape,
             out_window_shape,
@@ -38,7 +38,9 @@ class PreProcess(object):
             kernel_sizes,
             maxoutsize,
             params,
-            eval_window_size):
+            eval_window_size,
+            config_file,
+            n_valid_samples):
 
         self.in_window_shape                 = in_window_shape
         self.out_window_shape                = out_window_shape
@@ -61,6 +63,8 @@ class PreProcess(object):
         self.maxoutsize                      = maxoutsize
         self.params                          = params
         self.eval_window_size                = eval_window_size
+        self.config_file                     = config_file
+        self.n_valid_samples                 = n_valid_samples
 
         read_images = ImagesFromFile(self.n_train_files,self.n_test_files,self.img_size,self.classifier)
 
@@ -78,10 +82,13 @@ class PreProcess(object):
         self.test_files_labeled  = test_files_labeled
         self.img_group_train     = img_group_train
         self.img_group_test      = img_group_test
+        
+        self.n_test_samples = len(self.test_files_labeled)
 
         self.process = Process()
+        self.init_test_data()
 
-    def generate_train_data(self, config_file,valid_set_size):
+    def generate_train_data(self):
 
         print('Loading train images ...')
 
@@ -92,49 +99,25 @@ class PreProcess(object):
         train_img_input, train_img_labels = self.read_images.read_in_images(self.train_files_input,self.train_files_labeled)
 
         (train_img_input,
-         labeled_in_train,
-         labeled_out_train) = self.process.process_images(train_img_input,
-                                                          train_img_labels,
-                                                          self.classifier,
-                                                          self.membrane_edges)
+                labeled_in_train,
+                labeled_out_train) = self.process.process_images(train_img_input,
+                    train_img_labels,
+                    self.classifier,
+                    self.membrane_edges)
 
         sample = Sample(self.samples_per_image,
-                        self.on_ratio,
-                        self.layers_3D,
-                        self.classifier,
-                        self.in_window_shape,
-                        self.out_window_shape,
-                        self.img_group_train,
-                        config_file,
-                        self.pre_processed_folder)
+                self.on_ratio,
+                self.layers_3D,
+                self.classifier,
+                self.in_window_shape,
+                self.out_window_shape,
+                self.img_group_train,
+                self.config_file,
+                self.pre_processed_folder)
         sample.run_sampling(labeled_in_train,labeled_out_train,train_img_input)
         
-        #try:
-        #    test_set_x  = np.load(self.pre_processed_folder + 'x_test.npy')
-        #    test_set_y  = np.load(self.pre_processed_folder + 'y_test.npy')
-        #except:
-        #    print "Error: Unable to load pre-processed test set."
-        #    exit()
-
-        #if test_set_y.ndim != 2:
-        #    test_set_y  = test_set_y.reshape(test_set_y.shape[0],1)
-
-        #n_test_samples = test_set_x.shape[0]
-    
-        #if valid_set_size >test_set_x.shape[0]:
-        #    valid_set_size = test_set_x.shape[0]
-        #    print "Warning: Validation set is re-adjusted to:",test_set_x.shape[0]
-        #rand_val = np.random.permutation(range(test_set_x.shape[0]))[:valid_set_size]
-    
-    
-        valid_set_x = np.array([0])
-        valid_set_y = np.array([0])
-
-        #valid_set_x = np.zeros((valid_set_size,test_set_x.shape[1]))
-        #valid_set_y = np.zeros((valid_set_size,test_set_y.shape[1]))
-        #for n in xrange(len(rand_val)):
-        #    valid_set_x[n] = test_set_x[rand_val[n]]
-        #    valid_set_y[n] = test_set_y[rand_val[n]]
+        
+    def get_train_data(self,n_valid_images = 1):
 
         try:
             train_set_x = np.load(self.pre_processed_folder + 'x_train.npy')
@@ -148,6 +131,8 @@ class PreProcess(object):
 
         if train_set_y.ndim != 2:
             train_set_y = train_set_y.reshape(train_set_y.shape[0],1)
+            
+        valid_set_x,valid_set_y = self.generate_val_set(n_valid_images)
 
         # estimate the mean and std dev from the training data
         # then use these estimates to normalize the data
@@ -180,9 +165,8 @@ class PreProcess(object):
         return list_it, n_train_samples
             
             
-    def generate_test_data(self, config_file,conv_net,x,y,index):
+    def generate_test_data(self,model,x,y,index,net):
 
-        self.init_test_data(config_file)
         finished = False
 
         error_pixel_before  = 0.
@@ -216,24 +200,40 @@ class PreProcess(object):
 
                 n_test_batches /= test_batch_size
 
-                conv_net_test = conv_net.TestVersion(rng, 
-                        test_batch_size, 
-                        self.layers_3D, 
-                        self.num_kernels, 
-                        self.kernel_sizes, 
-                        x, 
-                        y,
-                        self.in_window_shape,
-                        self.out_window_shape,
-                        self.pred_window_size,
-                        self.classifier,
-                        maxoutsize = self.maxoutsize, 
-                        params = self.params, 
-                        network = conv_net, 
-                        dropout = [0.,0.,0.,0.0])
+                if net == 'ConvNet':
+                  model_test = model.TestVersion(rng, 
+                      test_batch_size, 
+                      self.layers_3D, 
+                      self.num_kernels, 
+                      self.kernel_sizes, 
+                      x, 
+                      y,
+                      self.in_window_shape,
+                      self.out_window_shape,
+                      self.pred_window_size,
+                      self.classifier,
+                      maxoutsize = self.maxoutsize, 
+                      params = self.params, 
+                      network = model, 
+                      dropout = [0.,0.,0.,0.0])
+
+                elif net == "FullyCon" or net == "FullyConCompressed":
+                  model_test= model.TestVersion(rng, 
+                      test_batch_size, 
+                      self.layers_3D, 
+                      x, 
+                      y,
+                      self.in_window_shape,
+                      self.out_window_shape,
+                      self.pred_window_size,
+                      self.classifier,
+                      params = self.params, 
+                      network = model)          
+                else:
+                  raise RuntimeError('Unable to load network: ' + str(self.net))
 
             # Predict test set
-            predict_test = f.init_predict(test_set_x,conv_net_test,test_batch_size,x,index)
+            predict_test = f.init_predict(test_set_x,model_test,test_batch_size,x,index)
             predict_test = f.predict_set(predict_test, n_test_batches, self.classifier, self.pred_window_size, number_pixels=number_test_pixels)
 
             # Evaluate error
@@ -279,7 +279,7 @@ class PreProcess(object):
         return output, y, error_pixel_before, error_window_before, error_pixel_after, error_window_after
 
 
-    def init_test_data(self, config_file):
+    def init_test_data(self):
 
         print('Loading test images ...')
 
@@ -298,7 +298,7 @@ class PreProcess(object):
                 self.layers_3D,
                 self.classifier,
                 self.stride,
-                config_file,
+                self.config_file,
                 self.pre_processed_folder,
                 self.test_files_labeled,
                 test_img_input,
@@ -307,6 +307,27 @@ class PreProcess(object):
 
         self.image_number = 0
         self.n_test_samples = len(self.test_files_labeled)
+        
+    def generate_val_set(self,n_valid_samples):
+        
+        for n in xrange(n_valid_samples):
+            img_number = np.random.randint(self.n_test_samples)
+            test_x,test_y = self.get_valid_sample(img_number)
+            try:
+                test_set_x = np.vstack((test_set_x,test_x))
+                test_set_y = np.vstack((test_set_y,test_y))
+            except:
+                test_set_x = test_x
+                test_set_y = test_y
+        
+        return test_set_x,test_set_y
+            
+        
+    def get_valid_sample(self,img_number):
+
+        test_set_x, test_set_y, table = self.gen_test_set.generate(img_number)
+    
+        return test_set_x,test_set_y
 
     def get_new_test_sample(self):
 

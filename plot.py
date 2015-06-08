@@ -48,19 +48,27 @@ def plot(adress = 'results/results/', n=0):
     print 'Max/min pred-value(bug-check): ',output.max(),output.min()
 
 
-    plt.figure()
-    plt.imshow(y[n,0],cmap=plt.cm.gray)
-    plt.colorbar()
-    plt.figure()
-    plt.imshow(output[n,0],cmap=plt.cm.gray)
-    plt.colorbar()
-    
-    if y.shape[1] >1:
+    if y.ndim == 4:
         plt.figure()
-        plt.imshow(y[n,1],cmap=plt.cm.gray)
+        plt.imshow(y[n,0],cmap=plt.cm.gray)
         plt.colorbar()
         plt.figure()
-        plt.imshow(output[n,1],cmap=plt.cm.gray)
+        plt.imshow(output[n,0],cmap=plt.cm.gray)
+        plt.colorbar()
+        
+        if y.shape[1] >1:
+            plt.figure()
+            plt.imshow(y[n,1],cmap=plt.cm.gray)
+            plt.colorbar()
+            plt.figure()
+            plt.imshow(output[n,1],cmap=plt.cm.gray)
+            plt.colorbar()
+    elif y.ndim == 3:
+        plt.figure()
+        plt.imshow(y[n],cmap=plt.cm.gray)
+        plt.colorbar()
+        plt.figure()
+        plt.imshow(output[n],cmap=plt.cm.gray)
         plt.colorbar()
 
     plt.show()

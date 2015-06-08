@@ -12,7 +12,8 @@ from theano.tensor.nnet import conv
 from logistic_sgd import LogisticRegression
 from hidden_layer import HiddenLayer
 
-from util.helper_functions import Functions as f
+import util.helper_functions as f
+from lib import init
 
 
 class PoolLayer(object):
@@ -20,16 +21,16 @@ class PoolLayer(object):
     Layer that performs convolution and maxpooling/subsampling
     """
 
-    def __init__(self, rng, input, subsample,filter_shape, image_shape, W = None, b = None,
+    def __init__(self, rng, input, subsample,filter_shape, image_shape, W=None, b=None,
             poolsize=(2, 2),maxoutsize = 1, params = {}, params_number = None):
 
         assert image_shape[1] == filter_shape[1]
         self.input = input
 
-        if W == None or b == None:
-            W_name = "W" + str(params_number)
-            b_name = "b" + str(params_number)
+        W_name = "W" + str(params_number)
+        b_name = "b" + str(params_number)
 
+        if W == None or b == None:
             if params.has_key(W_name) and params.has_key(b_name):
                 # Initialize weights 
                 W = theano.shared(
@@ -37,31 +38,33 @@ class PoolLayer(object):
                     name = W_name,
                     borrow=True
                 )
-
                 # Initialize biases
                 b = theano.shared(params[b_name], name = b_name, borrow=True)
+            
             else:
-               # there are "num input feature maps * filter height * filter width"
-               # inputs to each hidden unit
-               fan_in = numpy.prod(filter_shape[1:])
-               # each unit in the lower layer receives a gradient from:
-               # "num output feature maps * filter height * filter width" /
-               #   pooling size
-               fan_out = (filter_shape[0] * numpy.prod(filter_shape[2:]) /
-                          numpy.prod(poolsize))
-               # initialize weights with random weights
-               W_bound = numpy.sqrt(6. / (fan_in + fan_out))
-               W = theano.shared(
-                   numpy.asarray(
-                       rng.uniform(low=-W_bound, high=W_bound, size=filter_shape),
-                       dtype=theano.config.floatX
-                   ),
-                   borrow=True
-               )
+                # there are "num input feature maps * filter height * filter width"
+                # inputs to each hidden unit
+                fan_in = numpy.prod(filter_shape[1:])
+                # each unit in the lower layer receives a gradient from:
+                # "num output feature maps * filter height * filter width" /
+                #   pooling size
+                fan_out = (filter_shape[0] * numpy.prod(filter_shape[2:]) /
+                           numpy.prod(poolsize))
+                # initialize weights with random weights
+                W_bound = numpy.sqrt(6. / (fan_in + fan_out))
+                W = theano.shared(
+                    numpy.asarray(
+                        rng.uniform(low=-W_bound, high=W_bound, size=filter_shape),
+                        dtype=theano.config.floatX
+                    ),
+                    borrow=True
+                )
 
-               # the bias is a 1D tensor -- one bias per output feature map
-               b_values = numpy.zeros((filter_shape[0],), dtype=theano.config.floatX)
-               b = theano.shared(value=b_values, borrow=True)
+                # the bias is a 1D tensor -- one bias per output feature map
+                b_values = numpy.zeros((filter_shape[0],), dtype=theano.config.floatX)
+                b = theano.shared(value=b_values, borrow=True)  
+                W = theano.shared(init.HeNormal(filter_shape), borrow=True, name = W_name)
+                b = theano.shared(init.constant((filter_shape[0],), 0.), borrow=True, name = b_name)
 
         self.W = W
         self.b = b

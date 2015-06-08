@@ -9,14 +9,16 @@ import theano.tensor as T
 import cPickle
 from theano.tensor.shared_randomstreams import RandomStreams
 
-import post_process.post_process as post 
-from util.build_train_test_set             import BuildTrainTestSet 
 from util.runner_functions                 import RunnerFunctions
-from pre_process.pre_process               import Read 
-from models.conv_net     import ConvNet 
-from util.helper_functions import Functions as f 
+from util.worker                           import Worker
+from models.conv_net                       import ConvNet
+from models.fully_con                      import FullyCon,FullyConCompressed
+from util.optimizer                        import Optimizer
+import util.helper_functions as f 
 
 from layers.in_layer import InLayer
+
+rng              = np.random.RandomState(42)
 
 class ConvNetClassifier(RunnerFunctions):
     def __init__(self,params = {}):
@@ -26,71 +28,46 @@ class ConvNetClassifier(RunnerFunctions):
             os.makedirs("parameters")
 
     def run(self):
+        
+        worker = Worker(self.in_window_shape, 
+                self.out_window_shape, 
+                self.pred_window_size,
+                self.stride, 
+                self.img_size, 
+                self.classifier, 
+                self.n_train_files, 
+                self.n_test_files, 
+                self.samples_per_image, 
+                self.on_ratio, 
+                self.directory_input, 
+                self.directory_labels, 
+                self.membrane_edges,
+                self.layers_3D, 
+                self.pre_processed_folder,
+                self.batch_size,
+                self.num_kernels,
+                self.kernel_sizes,
+                self.maxoutsize,
+                self.params,
+                self.eval_window_size,
+                config_file,
+                self.n_validation_samples)
 
         if self.pre_process == True:
             print "Generating Train/Test Set..."
-            read = Read(self.in_window_shape, 
-                    self.out_window_shape, 
-                    self.pred_window_size,
-                    self.stride, 
-                    self.img_size, 
-                    self.classifier, 
-                    self.n_train_files, 
-                    self.n_test_files, 
-                    self.samples_per_image, 
-                    self.on_ratio, 
-                    self.directory_input, 
-                    self.directory_labels, 
-                    self.membrane_edges,
-                    self.layers_3D, 
-                    self.adaptive_histogram_equalization,
-                    self.pre_processed_folder,
-                    self.predict_only,
-                    self.predict_train_set,
-                    self.images_from_numpy)
 
-            read.generate_data(config_file)
+            worker.generate_train_data()
+        
+        data,n_train_samples = worker.get_train_data()
 
         # Load weight layers
         self.load_layers(self.load_n_layers)
-
-        # Initialize random stream
-        rng              = np.random.RandomState(42)
         
         print 'Loading data ...'
-
-        # load in and pre-process data
-        preProcess              = BuildTrainTestSet(self.n_validation_samples,self.pre_processed_folder)
-        data,n_test_batches,n_train_samples     = preProcess.build_train_val_set()
         
         if self.predict_only == False:
             train_set_x,train_set_y = data[0],data[2]
             n_train_batches         = train_set_x.get_value(borrow=True).shape[0]
-
-        n = 0
-        #import matplotlib.pyplot as plt
-        #plt.figure()
-        #plt.imshow(train_set_x.eval()[n].reshape(82,82),cmap=plt.cm.gray)
-        #plt.figure()
-        #plt.imshow(train_set_y.eval()[n].reshape(1,82,82)[0],cmap=plt.cm.gray)
-        #plt.figure()
-        #plt.imshow(train_set_y.eval()[n].reshape(2,82,82)[1],cmap=plt.cm.gray)
-        #plt.show()
-        #exit()
-
-        in_layer = InLayer(30,[82,82],[82,82],[64,48],1,self.classifier)
-        in_layer.in_layer(train_set_x[0:30],train_set_y[0:30])
-        
-        #n = 5
-        #import matplotlib.pyplot as plt
-        #plt.figure()
-        #plt.imshow(in_layer.output.eval()[n,0],cmap=plt.cm.gray)
-        #plt.figure()
-        #plt.imshow(in_layer.output_labeled.eval()[n].reshape(1,48,48)[0],cmap=plt.cm.gray)
-        #plt.figure()
-        #plt.imshow(in_layer.output_labeled.eval()[n].reshape(2,48,48)[1],cmap=plt.cm.gray)
-        #plt.show()
-        #exit()
 
         valid_set_x,valid_set_y = data[1],data[3]
         n_valid_batches         = valid_set_x.get_value(borrow=True).shape[0]
@@ -101,14 +78,9 @@ class ConvNetClassifier(RunnerFunctions):
         if valid_set_y.eval().size<self.batch_size:
             print 'Error: Batch size is larger than size of validation set.'
         
-        # adjust batch size
-        print n_test_batches
-        while n_test_batches % self.batch_size != 0:
-            self.batch_size += 1 
         print 'Batch size: ',self.batch_size
 
         n_train_batches /= self.batch_size
-        n_test_batches  /= self.batch_size
         n_valid_batches /= self.batch_size
 
         # symbolic variables
@@ -116,45 +88,96 @@ class ConvNetClassifier(RunnerFunctions):
         y       = T.matrix('y')        # input label data
         
         # Initialize networks
-        conv_net = ConvNet(rng, 
-                self.batch_size, 
-                self.layers_3D, 
-                self.num_kernels, 
-                self.kernel_sizes, 
-                x, 
-                y,
-                self.in_window_shape,
-                self.out_window_shape,
-                self.pred_window_size,
-                self.classifier,
-                maxoutsize = self.maxoutsize, 
-                params = self.params, 
-                dropout = self.dropout)
+        if self.net == 'ConvNet':
+            model = ConvNet(rng, 
+                    self.batch_size, 
+                    self.layers_3D, 
+                    self.num_kernels, 
+                    self.kernel_sizes, 
+                    x, 
+                    y,
+                    self.in_window_shape,
+                    self.out_window_shape,
+                    self.pred_window_size,
+                    self.classifier,
+                    maxoutsize = self.maxoutsize, 
+                    params = self.params, 
+                    dropout = self.dropout)
 
-        conv_net_test = conv_net.TestVersion(rng, 
-                self.batch_size, 
-                self.layers_3D, 
-                self.num_kernels, 
-                self.kernel_sizes, 
-                x, 
-                y,
-                self.in_window_shape,
-                self.out_window_shape,
-                self.pred_window_size,
-                self.classifier,
-                maxoutsize = self.maxoutsize, 
-                params = self.params, 
-                network = conv_net, 
-                dropout = [0.,0.,0.,0.5])
+            model_val = model.TestVersion(rng, 
+                    self.batch_size, 
+                    self.layers_3D, 
+                    self.num_kernels, 
+                    self.kernel_sizes, 
+                    x, 
+                    y,
+                    self.in_window_shape,
+                    self.out_window_shape,
+                    self.pred_window_size,
+                    self.classifier,
+                    maxoutsize = self.maxoutsize, 
+                    params = self.params, 
+                    network = model, 
+                    dropout = [0.,0.,0.,0.0])
+                
+        elif self.net == "FullyCon":
+            model = FullyCon(rng, 
+                    self.batch_size, 
+                    self.layers_3D, 
+                    x, 
+                    y,
+                    self.in_window_shape,
+                    self.out_window_shape,
+                    self.pred_window_size,
+                    self.classifier,
+                    params = self.params)
+
+            model_val= model.TestVersion(rng, 
+                    self.batch_size, 
+                    self.layers_3D, 
+                    x, 
+                    y,
+                    self.in_window_shape,
+                    self.out_window_shape,
+                    self.pred_window_size,
+                    self.classifier,
+                    params = self.params, 
+                    network = model)
+        elif self.net == "FullyConCompressed":
+            model = FullyConCompressed(rng, 
+                    self.batch_size, 
+                    self.layers_3D, 
+                    x, 
+                    y,
+                    self.in_window_shape,
+                    self.out_window_shape,
+                    self.pred_window_size,
+                    self.classifier,
+                    params = self.params)
+
+            model_val= model.TestVersion(rng, 
+                    self.batch_size, 
+                    self.layers_3D, 
+                    x, 
+                    y,
+                    self.in_window_shape,
+                    self.out_window_shape,
+                    self.pred_window_size,
+                    self.classifier,
+                    params = self.params, 
+                    network = model)
+        else:
+            raise RuntimeError('Unable to load network: ' + str(self.net))
 
         # Initialize parameters and functions
-        cost        = conv_net.layer4.negative_log_likelihood(self.penalty_factor)  # Cost function
-        self.params = conv_net.params                                               # List of parameters
+        cost        = model.layer4.negative_log_likelihood(self.penalty_factor)  # Cost function
+        self.params = model.params                                               # List of parameters
         grads       = T.grad(cost, self.params)                                     # Gradient
         index       = T.lscalar()                                                   # Index
         
-        # Intialize optimizer
-        updates = conv_net.init_optimizer(self.optimizer, cost, self.params, self.optimizerData)
+        # Intialize optimizera
+        optimizer = Optimizer()
+        updates = optimizer.init_optimizer(self.optimizer, cost, self.params, self.optimizerData)
         srng = RandomStreams(seed=234)
         perm = theano.shared(np.arange(train_set_x.eval().shape[0]))
 
@@ -176,7 +199,7 @@ class ConvNetClassifier(RunnerFunctions):
             val_results_pixel   = []
             time_results        = []
 
-            predict_val = self.init_predict(valid_set_x,conv_net_test,self.batch_size,x,index)
+            predict_val = f.init_predict(valid_set_x, model_val,self.batch_size,x,index)
 
             # Solver
             try:
@@ -201,8 +224,10 @@ class ConvNetClassifier(RunnerFunctions):
 
                     costs             = [train_model(i) for i in xrange(n_train_batches)]
                     epoch_cost = np.mean(costs)
-                    output_val = self.predict_set(predict_val,n_valid_batches)
-                    error_pixel,error_window = self.evaluate(output_val,valid_set_y.get_value(borrow=True))
+                    output_val = f.predict_set(predict_val,n_valid_batches,self.classifier, self.pred_window_size)
+                    error_pixel,error_window = f.evaluate(output_val,valid_set_y.get_value(borrow=True),self.eval_window_size,self.classifier)
+                    #error_pixel = 0.
+                    #error_window = 0.
 
                     t2 = time.time()
                     epoch_time = (t2-t1)/60.
@@ -234,42 +259,22 @@ class ConvNetClassifier(RunnerFunctions):
             np.save(self.results_folder + 'results.npy', results)
         except:
             pass
-        
-        # Load test set
-        data    = preProcess.build_test_set()
-        test_set_x,test_set_y   = data[0],data[1]
+            
+        (output, 
+         y, 
+         error_pixel_before, 
+         error_window_before, 
+         error_pixel_after, 
+         error_window_after) = worker.generate_test_data(model,x,y,index,self.net)
 
-        # Timer information
-        number_test_pixels  = test_set_y.get_value(borrow=True).shape[0]*test_set_y.get_value(borrow=True).shape[1]
-
-        # Predict test set
-        predict_test = self.init_predict(test_set_x,conv_net_test,self.batch_size,x,index)
-        output       = self.predict_set(predict_test,n_test_batches,number_pixels=number_test_pixels)
-
-        # Evaluate error
-        error_pixel_before,error_window_before = self.evaluate(output,test_set_y.get_value(borrow=True))
         print 'Error before averaging (pixel/window): ' + str(error_pixel_before) + "/" + str(error_window_before)
-
-        # Post-process
-        table = np.load(self.pre_processed_folder + 'table.npy')
-
-        output, y = post.post_process(train_set_x.get_value(borrow=True),
-                train_set_y.get_value(borrow=True),
-                output,
-                test_set_y.get_value(borrow=True),
-                table,
-                self.img_size,
-                self.pred_window_size[0],
-                self.pred_window_size[1],
-                self.classifier)
-
-        # Evalute error after post-processing 
-        error_pixel_after,error_window_after = self.evaluate(output,y)
         print 'Error after averaging (pixel/window): ' + str(error_pixel_after) + "/" + str(error_window_after)
 
         # Save and write
         self.write_results(error_pixel_before,error_window_before,error_pixel_after,error_window_after)
         self.write_parameters(end_epochs,n_train_samples)
+        
+        print output.shape,y.shape
         np.save(self.results_folder + 'output.npy', output)
         np.save(self.results_folder + 'y.npy', y)
         self.write_last_run(self.ID_folder)

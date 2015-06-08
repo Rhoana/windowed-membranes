@@ -1,4 +1,4 @@
-from util.helper_functions import Functions
+import util.helper_functions as f
 import theano
 from layers.pool_layer                    import PoolLayer
 from layers.hidden_layer                  import HiddenLayer
@@ -6,7 +6,7 @@ from layers.logistic_sgd                  import LogisticRegression
 from layers.pool_layer                    import PoolLayer
 from layers.in_layer                      import InLayer
 
-class ConvNet(Functions):
+class ConvNet(object):
     '''
     Class that defines the hierarchy and design of the convolutional
     layers.
@@ -54,7 +54,7 @@ class ConvNet(Functions):
 
             # Initialize Layer 1
             self.layer1 = PoolLayer(rng,
-                                        input= self.dropout(self.layer0.output,p=dropout[0]),
+                                        input= f.dropout(self.layer0.output,p=dropout[0]),
                                         image_shape=self.layer1_input_size,
                                         subsample= (1,1),
                                         filter_shape=(num_kernels[1], num_kernels[0]/maxoutsize[0]) + kernel_sizes[1],
@@ -70,7 +70,7 @@ class ConvNet(Functions):
 
             # Initialize Layer 2
             self.layer2 = PoolLayer(rng,
-                                        input= self.dropout(self.layer1.output,p=dropout[1]),
+                                        input= f.dropout(self.layer1.output,p=dropout[1]),
                                         image_shape=self.layer2_input_size,
                                         subsample= (1,1),
                                         filter_shape=(num_kernels[2], num_kernels[1]/maxoutsize[1]) + kernel_sizes[2],
@@ -83,16 +83,16 @@ class ConvNet(Functions):
             
             # Layer 3: Fully connected layer
             self.layer3 = HiddenLayer(rng,
-                                    input      = self.dropout(self.layer3_input,p=dropout[2]),
+                                    input      = f.dropout(self.layer3_input,p=dropout[2]),
                                     n_in       = (num_kernels[2]/maxoutsize[2]) * self.edge2 * self.edge2,
                                     n_out      = (num_kernels[2]/maxoutsize[2]) * self.edge2 * self.edge2,
-                                    activation = self.rectify,
+                                    activation = f.rectify,
                                     params = params,
                                     params_number = 3)
 
 
             if classifier in ["membrane","synapse"]:
-                self.layer4 = LogisticRegression(input = self.dropout(self.layer3.output,p=dropout[3]),
+                self.layer4 = LogisticRegression(input = f.dropout(self.layer3.output,p=dropout[3]),
                                             n_in  = (num_kernels[2]/maxoutsize[2]) * self.edge2 * self.edge2,
                                             n_out = pred_window_size[1]**2,
                                             y = y,
@@ -102,7 +102,7 @@ class ConvNet(Functions):
                                             classifier = classifier)
 
             elif classifier == "membrane_synapse":
-                self.layer4 = LogisticRegression(input = self.dropout(self.layer3.output,p=dropout[3]),
+                self.layer4 = LogisticRegression(input = f.dropout(self.layer3.output,p=dropout[3]),
                                             n_in  = (num_kernels[2]/maxoutsize[2]) * self.edge2 * self.edge2,
                                             n_out = 2*pred_window_size[1]**2,
                                             y = y,
@@ -145,7 +145,7 @@ class ConvNet(Functions):
 
             # Initialize Layer 1
             self.layer1 = network.layer1.TestVersion(rng,
-                                        input= self.dropout(self.layer0.output,p=dropout[0]),
+                                        input= f.dropout(self.layer0.output,p=dropout[0]),
                                         image_shape=self.layer1_input_size,
                                         subsample= (1,1),
                                         filter_shape=(num_kernels[1], num_kernels[0]/maxoutsize[0]) + kernel_sizes[1],
@@ -161,7 +161,7 @@ class ConvNet(Functions):
 
             # Initialize Layer 2
             self.layer2 = network.layer2.TestVersion(rng,
-                                        input= self.dropout(self.layer1.output,p=dropout[1]),
+                                        input= f.dropout(self.layer1.output,p=dropout[1]),
                                         image_shape=self.layer2_input_size,
                                         subsample= (1,1),
                                         filter_shape=(num_kernels[2], num_kernels[1]/maxoutsize[1]) + kernel_sizes[2],
@@ -174,16 +174,16 @@ class ConvNet(Functions):
             
             # Layer 3: Fully connected layer
             self.layer3 = network.layer3.TestVersion(rng,
-                                    input      = self.dropout(self.layer3_input,p=dropout[2]),
+                                    input      = f.dropout(self.layer3_input,p=dropout[2]),
                                     n_in       = (num_kernels[2]/maxoutsize[2]) * self.edge2 * self.edge2,
                                     n_out      = (num_kernels[2]/maxoutsize[2]) * self.edge2 * self.edge2,
-                                    activation = self.rectify,
+                                    activation = f.rectify,
                                     params = params,
                                     params_number = 3)
 
 
             if classifier in ["membrane","synapse"]:
-                self.layer4 = network.layer4.TestVersion(input = self.dropout(self.layer3.output,p=dropout[3]),
+                self.layer4 = network.layer4.TestVersion(input = f.dropout(self.layer3.output,p=dropout[3]),
                                             n_in  = (num_kernels[2]/maxoutsize[2]) * self.edge2 * self.edge2,
                                             n_out = pred_window_size[1]**2,
                                             y = y,
@@ -192,7 +192,7 @@ class ConvNet(Functions):
                                             params_number = 4,
                                             classifier = classifier)
             elif classifier == "membrane_synapse":
-                self.layer4 = network.layer4.TestVersion(input = self.dropout(self.layer3.output,p=dropout[3]),
+                self.layer4 = network.layer4.TestVersion(input = f.dropout(self.layer3.output,p=dropout[3]),
                                             n_in  = (num_kernels[2]/maxoutsize[2]) * self.edge2 * self.edge2,
                                             n_out = 2*pred_window_size[1]**2,
                                             y = y,
