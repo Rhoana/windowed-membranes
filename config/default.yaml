@@ -10,7 +10,7 @@ optimizer-data:
 image-data:
   samples_per_image: 200
   n_test_files: 2
-  pre_process: !!bool True
+  pre_process: !!bool False
 network:
   #size: fully_con_compressed
   #size: fully_con
