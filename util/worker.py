@@ -1,5 +1,3 @@
-#File for generating samples from input data
-##
 import numpy as np
 import glob
 import os
@@ -17,6 +15,9 @@ import post_process.post_process as post
 rng              = np.random.RandomState(42)
 
 class Worker(object):
+    """
+    Worker class to generate train/valid/test sets.
+    """
 
     def __init__(self,in_window_shape,
             out_window_shape,
@@ -66,8 +67,8 @@ class Worker(object):
         self.config_file                     = config_file
         self.n_valid_samples                 = n_valid_samples
 
+        # Initialize generation of sets
         read_images = ImagesFromFile(self.n_train_files,self.n_test_files,self.img_size,self.classifier)
-
         (train_files_input,
                 train_files_labeled,
                 test_files_input,
@@ -85,10 +86,15 @@ class Worker(object):
         
         self.n_test_samples = len(self.test_files_labeled)
 
+        # Initialize process
         self.process = Process()
+        # Initialize generation of test data
         self.init_test_data()
 
     def generate_train_data(self):
+        """
+        Generate training data and store it as .npy file.
+        """
 
         print('Loading train images ...')
 
@@ -118,6 +124,10 @@ class Worker(object):
         
         
     def get_train_data(self,n_valid_images = 1):
+        """
+        Get training data and validation set and do
+        normalization of the data.
+        """
 
         try:
             train_set_x = np.load(self.pre_processed_folder + 'x_train.npy')
@@ -166,6 +176,9 @@ class Worker(object):
             
             
     def generate_test_data(self,model,x,y,index,net):
+        """
+        Generate and predict test data
+        """
 
         finished = False
 
@@ -324,13 +337,16 @@ class Worker(object):
             
         
     def get_valid_sample(self,img_number):
-
+        """
+        Generate one new validation sample
+        """
         test_set_x, test_set_y, table = self.gen_test_set.generate(img_number)
-    
         return test_set_x,test_set_y
 
     def get_new_test_sample(self):
-
+        """
+        Generate one new test sample
+        """
         if self.image_number < self.n_test_samples: 
             test_set_x, test_set_y, table = self.gen_test_set.generate(self.image_number)
             self.image_number += 1 
