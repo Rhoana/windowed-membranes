@@ -145,8 +145,10 @@ def predict_set(predict, n_batches, classifier, pred_window_size, number_pixels 
 
 # --------------------------------------------------------------------------
 def evaluate(pred,ground_truth,eval_window_size,classifier):
-
+    
     ground_truth = ground_truth[:pred.shape[0]]
+
+    #ground_truth = ground_truth[:pred.shape[0]]
     eval_window = np.ones((eval_window_size,eval_window_size))
 
     # Reshape

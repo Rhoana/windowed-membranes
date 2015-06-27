@@ -274,10 +274,22 @@ class ConvNetClassifier(RunnerFunctions):
         self.write_results(error_pixel_before,error_window_before,error_pixel_after,error_window_after)
         self.write_parameters(end_epochs,n_train_samples)
         
-        print output.shape,y.shape
         np.save(self.results_folder + 'output.npy', output)
         np.save(self.results_folder + 'y.npy', y)
         self.write_last_run(self.ID_folder)
+        
+        make_set = True
+        if make_set == True:
+            from PIL import Image
+            set_folder = self.results_folder+"/set/"
+            if os.path.isdir(set_folder) != True:
+                os.makedirs(set_folder)
+     
+            for n in xrange(output.shape[0]):
+                im = Image.fromarray(np.uint8(output[n]*255))
+                im.save(set_folder + "set_" + str(n) + ".tif")
+            
+            
 
 if __name__ == "__main__":
     config_file = sys.argv[1] if len(sys.argv) > 1 else "default.yaml"

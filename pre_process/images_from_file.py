@@ -1,6 +1,7 @@
 import numpy as np
 import glob
 from PIL import Image
+import PIL
 from scipy import signal
 
 
@@ -110,19 +111,34 @@ class ImagesFromFile(object):
         input_files = []
         img_group = []
         for directory in directory_input:
-            directory_files = sorted(glob.glob(directory+"/*.tif"),key=self.sort_key)
+            files = glob.glob(directory+"/*.tif") + glob.glob(directory+"/*.png")
+            directory_files = sorted(files,key=self.sort_key)
             img_group.append(len(input_files))
             input_files += directory_files
             img_group.append(len(input_files)-1)
         labeled_files = []
         for directory in directory_labels:
-            labeled_files += sorted(glob.glob(directory+"/*.tif"),key=self.sort_key)
+            files = glob.glob(directory+"/*.tif") + glob.glob(directory+"/*.png")
+            labeled_files += sorted(files,key=self.sort_key)
+
+        print len(input_files)
+        print len(labeled_files)
 
         total_files = len(input_files)
         train_files_input   = input_files[:-self.n_test_files]
-        test_files_input    = input_files[-self.n_test_files:]
         train_files_labeled = labeled_files[:-self.n_test_files]
-        test_files_labeled  = labeled_files[-self.n_test_files:]
+        
+        ##########################################################################
+        # TEMP
+        ##########################################################################
+        predict_stack = True
+        if predict_stack == False:
+            test_files_input    = input_files[-self.n_test_files:]
+            test_files_labeled  = labeled_files[-self.n_test_files:]
+        else:
+            test_files_input   = input_files
+            test_files_labeled = labeled_files
+        ########################################################################## 
 
         img_group.append(total_files-self.n_test_files-1)
         img_group.append(total_files-self.n_test_files)
@@ -139,43 +155,106 @@ class ImagesFromFile(object):
         Read in images and generate train/test set. 
         """
         
-        img_input = np.zeros((len(files_input),self.img_size[0]**2))
-        if self.classifier == "membrane_synapse":
-            img_labels = np.zeros((len(files_labeled),2*self.img_size[0]**2))
-        else:
-            img_labels = np.zeros((len(files_labeled),self.img_size[0]**2))
+        post_process = True
+        
+        if post_process == False:
+            img_input = np.zeros((len(files_input),self.img_size[0]**2))
+            if self.classifier == "membrane_synapse":
+                img_labels = np.zeros((len(files_labeled),2*self.img_size[0]**2))
+            else:
+                img_labels = np.zeros((len(files_labeled),self.img_size[0]**2))
 
-        for n in xrange(len(files_input)):
-            File = files_input[n]
-            img_temp = Image.open(File)                                                        
-            img_temp = np.array(img_temp.getdata()).flatten(1)                                  
-            img_input[n] = img_temp  
+            for n in xrange(len(files_input)):
+                File = files_input[n]
+                img_temp = Image.open(File)                                                        
+                img_temp = np.array(img_temp).ravel()                                 
+                img_input[n] = img_temp  
 
-            File = files_labeled[n]
-            img_temp = Image.open(File)                                                        
-            img_temp = np.array(img_temp.getdata()).reshape(img_temp.size)
-            img_temp.flags.writeable = True
+                File = files_labeled[n]
+                img_temp = Image.open(File)                                                        
+                img_temp = np.array(img_temp.getdata()).reshape(img_temp.size)
+                img_temp.flags.writeable = True
 
-            if self.classifier == 'membrane':
-                img_temp = self.find_edges(img_temp)
-            elif self.classifier == 'synapse':
-                img_temp = self.find_synapse(img_temp,File)
-            elif self.classifier == 'membrane_synapse':
-                img_temp = self.find_mem_syn(img_temp,File)
-
-            img_labels[n] = img_temp.ravel()
+                if self.classifier == 'membrane':
+                    img_temp = self.find_edges(img_temp)
+                elif self.classifier == 'synapse':
+                    img_temp = self.find_synapse(img_temp,File)
+                elif self.classifier == 'membrane_synapse':
+                    img_temp = self.find_mem_syn(img_temp,File)
             
 
-        if self.classifier == "membrane" or self.classifier == "synapse":
-            output_dim = 1
-        elif self.classifier == "membrane_synapse":
-            output_dim = 2
-        else:
-            print "Error: invalid classifier"
-            exit()
+            if self.classifier == "membrane" or self.classifier == "synapse":
+                output_dim = 1
+            elif self.classifier == "membrane_synapse":
+                output_dim = 2
+            else:
+                print "Error: invalid classifier"
+                exit()
 
-        img_input  = img_input.reshape(img_input.shape[0], self.img_size[0],self.img_size[1])
-        img_labels = img_labels.reshape(img_labels.shape[0], output_dim, self.img_size[0],self.img_size[1])
+            img_input  = img_input.reshape(img_input.shape[0], self.img_size[0],self.img_size[1])
+            img_labels = img_labels.reshape(img_labels.shape[0], output_dim, self.img_size[0],self.img_size[1])
+        
+        else:
+            img_input = np.zeros((len(files_input),self.img_size[0]**2))
+            if self.classifier == "membrane_synapse":
+                img_labels = np.zeros((len(files_labeled),2*self.img_size[0]**2))
+            else:
+                img_labels = np.zeros((len(files_labeled),self.img_size[0]**2))
+                
+            for n in xrange(len(files_input)):
+                File = files_input[n]
+                img_temp = Image.open(File)  
+                
+                if n == 0:
+                    img_size_input = np.array(img_temp).shape[0]
+                    img_size_input = (img_size_input,img_size_input)
+                    gap = (self.img_size[0]-img_size_input[0])/2
+                    
+                img_temp = img_temp.resize((self.img_size[0], self.img_size[1]), PIL.Image.ANTIALIAS)                                                      
+                img_temp = np.array(img_temp).T.ravel() 
+                                            
+                img_input[n] = img_temp  
+
+                File = files_labeled[n]
+                img_temp = Image.open(File)
+                
+                if gap>0:
+                    img_temp = np.array(img_temp)[gap:-gap,gap:-gap]
+                    img_temp = Image.fromarray(np.uint8(img_temp))
+                    img_temp = img_temp.resize((self.img_size[0], self.img_size[1]), PIL.Image.ANTIALIAS)
+                                                                        
+                img_temp = np.array(img_temp.getdata()).reshape(img_temp.size)
+                img_temp.flags.writeable = True
+
+                if self.classifier == 'membrane':
+                    img_temp = self.find_edges(img_temp)
+                elif self.classifier == 'synapse':
+                    img_temp = self.find_synapse(img_temp,File)
+                elif self.classifier == 'membrane_synapse':
+                    img_temp = self.find_mem_syn(img_temp,File)
+
+                img_labels[n] = img_temp.ravel()
+            
+                #import matplotlib.pyplot as plt
+                #print img_input.shape
+                #plt.figure()
+                #plt.imshow(img_input[0].reshape(1024,1024))
+                #plt.figure()
+                #plt.imshow(img_labels[0].reshape(1024,1024))
+                #plt.show()
+                #exit()
+            
+
+            if self.classifier == "membrane" or self.classifier == "synapse":
+                output_dim = 1
+            elif self.classifier == "membrane_synapse":
+                output_dim = 2
+            else:
+                print "Error: invalid classifier"
+                exit()
+                
+            img_input  = img_input.reshape(img_input.shape[0], self.img_size[0],self.img_size[1])
+            img_labels = img_labels.reshape(img_labels.shape[0], output_dim, self.img_size[0],self.img_size[1])
 
         return img_input, img_labels
 

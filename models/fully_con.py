@@ -39,15 +39,31 @@ class FullyCon(object):
             self.layer0 = HiddenLayer(rng,
                                     input      = self.layer0_input,
                                     n_in       = pred_window_size[0]**2,
-                                    n_out      = 4000,
+                                    n_out      = 1000,
                                     activation = f.rectify,
                                     params = params,
                                     params_number = 0)
+                                    
+            self.layer1 = HiddenLayer(rng,
+                                    input      = f.dropout(self.layer0.output,p=0.5),
+                                    n_in       = 1000,
+                                    n_out      = 1000,
+                                    activation = f.rectify,
+                                    params = params,
+                                    params_number = 1)
+            
+            self.layer2 = HiddenLayer(rng,
+                                    input      = f.dropout(self.layer1.output,p=0.5),
+                                    n_in       = 1000,
+                                    n_out      = 1000,
+                                    activation = f.rectify,
+                                    params = params,
+                                    params_number = 2)
 
 
             if classifier in ["membrane","synapse"]:
-                self.layer4 = LogisticRegression(input = f.dropout(self.layer0.output,p=0.5),
-                                            n_in  = 4000,
+                self.layer4 = LogisticRegression(input = f.dropout(self.layer2.output,p=0.5),
+                                            n_in  = 1000,
                                             n_out = pred_window_size[1]**2,
                                             y = y,
                                             out_window_shape = pred_window_size[1],
@@ -56,8 +72,8 @@ class FullyCon(object):
                                             classifier = classifier)
 
             elif classifier == "membrane_synapse":
-                self.layer4 = LogisticRegression(input = f.dropout(self.layer3.output,p=0.5),
-                                            n_in  = 4000,
+                self.layer4 = LogisticRegression(input = f.dropout(self.layer2.output,p=0.5),
+                                            n_in  = 1000,
                                             n_out = 2*pred_window_size[1]**2,
                                             y = y,
                                             out_window_shape = pred_window_size[1],
@@ -66,7 +82,7 @@ class FullyCon(object):
                                             classifier = classifier)
             
             # Define list of parameters
-            self.params = self.layer0.params + self.layer4.params 
+            self.params = self.layer0.params +self.layer1.params + self.layer2.params + self.layer4.params 
 
         else:
             self.srng = theano.tensor.shared_randomstreams.RandomStreams(
@@ -81,15 +97,31 @@ class FullyCon(object):
             self.layer0 = network.layer0.TestVersion(rng,
                                     input      = self.layer0_input,
                                     n_in       = pred_window_size[0]**2,
-                                    n_out      = 4000,
+                                    n_out      = 1000,
                                     activation = f.rectify,
                                     params = params,
                                     params_number = 0)
+                                    
+            self.layer1 = network.layer1.TestVersion(rng,
+                                    input      = self.layer0.output,
+                                    n_in       = 1000,
+                                    n_out      = 1000,
+                                    activation = f.rectify,
+                                    params = params,
+                                    params_number = 1)
+            
+            self.layer2 = network.layer2.TestVersion(rng,
+                                    input      = self.layer1.output,
+                                    n_in       = 1000,
+                                    n_out      = 1000,
+                                    activation = f.rectify,
+                                    params = params,
+                                    params_number = 2)
 
 
             if classifier in ["membrane","synapse"]:
-                self.layer4 = network.layer4.TestVersion(input = f.dropout(self.layer0.output,p=0.0),
-                                            n_in  = 4000,
+                self.layer4 = network.layer4.TestVersion(input = f.dropout(self.layer2.output,p=0.0),
+                                            n_in  = 1000,
                                             n_out = pred_window_size[1]**2,
                                             y = y,
                                             out_window_shape = pred_window_size[1],
@@ -98,8 +130,8 @@ class FullyCon(object):
                                             classifier = classifier)
 
             elif classifier == "membrane_synapse":
-                self.layer4 = network.layer4.TestVersion(input = f.dropout(self.layer3.output,p=0.0),
-                                            n_in  = 4000,
+                self.layer4 = network.layer4.TestVersion(input = f.dropout(self.layer2.output,p=0.0),
+                                            n_in  = 1000,
                                             n_out = 2*pred_window_size[1]**2,
                                             y = y,
                                             out_window_shape = pred_window_size[1],

@@ -1,0 +1,4 @@
+Pixel-error before averaging: 0.225789152985
+Window-error before averaging: 0.175751921331
+Pixel-error after averaging: 0.225789152985
+Window-error after averaging: 0.175751921331
