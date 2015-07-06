@@ -121,8 +121,13 @@ class ImagesFromFile(object):
             files = glob.glob(directory+"/*.tif") + glob.glob(directory+"/*.png")
             labeled_files += sorted(files,key=self.sort_key)
 
-        print len(input_files)
-        print len(labeled_files)
+
+        if len(input_files) != len(labeled_files):
+
+            if len(files)<len(labeled_files):
+                labeled_files = labeled_files[:len(input_files)]
+            else:
+                input_files = input_files[:len(labeled_files)]
 
         total_files = len(input_files)
         train_files_input   = input_files[:-self.n_test_files]
@@ -131,7 +136,7 @@ class ImagesFromFile(object):
         ##########################################################################
         # TEMP
         ##########################################################################
-        predict_stack = True
+        predict_stack = False
         if predict_stack == False:
             test_files_input    = input_files[-self.n_test_files:]
             test_files_labeled  = labeled_files[-self.n_test_files:]
@@ -155,7 +160,7 @@ class ImagesFromFile(object):
         Read in images and generate train/test set. 
         """
         
-        post_process = True
+        post_process = False
         
         if post_process == False:
             img_input = np.zeros((len(files_input),self.img_size[0]**2))
@@ -172,16 +177,20 @@ class ImagesFromFile(object):
 
                 File = files_labeled[n]
                 img_temp = Image.open(File)                                                        
-                img_temp = np.array(img_temp.getdata()).reshape(img_temp.size)
+                img_temp = np.array(img_temp)
+                img_temp = img_temp.ravel()
+
                 img_temp.flags.writeable = True
 
                 if self.classifier == 'membrane':
-                    img_temp = self.find_edges(img_temp)
+                    img_temp[img_temp>0] = 1
+                    #img_temp = self.find_edges(img_temp)
                 elif self.classifier == 'synapse':
                     img_temp = self.find_synapse(img_temp,File)
                 elif self.classifier == 'membrane_synapse':
                     img_temp = self.find_mem_syn(img_temp,File)
-            
+
+                img_labels[n] = img_temp
 
             if self.classifier == "membrane" or self.classifier == "synapse":
                 output_dim = 1
@@ -211,7 +220,7 @@ class ImagesFromFile(object):
                     gap = (self.img_size[0]-img_size_input[0])/2
                     
                 img_temp = img_temp.resize((self.img_size[0], self.img_size[1]), PIL.Image.ANTIALIAS)                                                      
-                img_temp = np.array(img_temp).T.ravel() 
+                img_temp = np.array(img_temp).ravel() 
                                             
                 img_input[n] = img_temp  
 
@@ -223,7 +232,7 @@ class ImagesFromFile(object):
                     img_temp = Image.fromarray(np.uint8(img_temp))
                     img_temp = img_temp.resize((self.img_size[0], self.img_size[1]), PIL.Image.ANTIALIAS)
                                                                         
-                img_temp = np.array(img_temp.getdata()).reshape(img_temp.size)
+                img_temp = np.array(img_temp).reshape(img_temp.size)
                 img_temp.flags.writeable = True
 
                 if self.classifier == 'membrane':
@@ -234,15 +243,6 @@ class ImagesFromFile(object):
                     img_temp = self.find_mem_syn(img_temp,File)
 
                 img_labels[n] = img_temp.ravel()
-            
-                #import matplotlib.pyplot as plt
-                #print img_input.shape
-                #plt.figure()
-                #plt.imshow(img_input[0].reshape(1024,1024))
-                #plt.figure()
-                #plt.imshow(img_labels[0].reshape(1024,1024))
-                #plt.show()
-                #exit()
             
 
             if self.classifier == "membrane" or self.classifier == "synapse":

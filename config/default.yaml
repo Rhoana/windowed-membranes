@@ -6,15 +6,15 @@ hyper-parameters:
   stride: 48
   layers_3D: 1
 optimizer-data:
-    optimizer: 'momentum'
+    optimizer: 'Adam'
 image-data:
-  samples_per_image: 200
+  samples_per_image: 1000
   n_test_files: 2
   pre_process: !!bool True
 network:
   #size: fully_con_compressed
-  #size: fully_con
-  size: conv_small
+  size: fully_con
+  #size: conv_small
 classifier:
   classifier: "membrane"
 weights:

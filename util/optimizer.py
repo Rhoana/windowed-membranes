@@ -3,6 +3,8 @@ import theano
 import theano.tensor as T
 from collections import OrderedDict  
 
+from util.utils import floatX
+
 class Optimizer(object):
 
     def init_optimizer(self, optimizer, cost, params, optimizerData):
@@ -191,7 +193,7 @@ class Optimizer(object):
         return updates
 
 
-    def momentum(self, cost, params, lr = 0.1, momentum=0.9):
+    def momentum(self, cost, params, lr = 0.01, momentum=0.9):
         """
         lasagne
         """
