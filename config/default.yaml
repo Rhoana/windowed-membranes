@@ -8,7 +8,7 @@ hyper-parameters:
 optimizer-data:
     optimizer: 'Adam'
 image-data:
-  samples_per_image: 1000
+  samples_per_image: 200
   n_test_files: 2
   pre_process: !!bool True
 network:

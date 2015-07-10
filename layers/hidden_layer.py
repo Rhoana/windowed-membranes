@@ -12,7 +12,7 @@ from lib import init
 
 class HiddenLayer(object):
     def __init__(self, rng, input, n_in, n_out, W = None, b = None, 
-            activation=None, params = {}, params_number = None):
+            activation=None, params = {}, params_number = None,maxoutsize = 1):
         """
         Fully connected layer 
         """
@@ -54,15 +54,25 @@ class HiddenLayer(object):
         self.b = b
         
         # Calculate output 
-        lin_output = T.dot(input, self.W) + self.b
-        self.output = activation(lin_output)
+        output = activation(T.dot(input, self.W) + self.b)
+        
+        # Maxout                                                                
+        maxout_out = None                                                       
+        for i in xrange(maxoutsize):                                            
+            t = output[:,i::maxoutsize]                                   
+            if maxout_out is None:                                              
+                maxout_out = t                                                  
+            else:                                                               
+                maxout_out = T.maximum(maxout_out, t)
+                
+        self.output = maxout_out
 
         # Add parameters to model
         self.params = [self.W, self.b]
 
     def TestVersion(self,rng, input, n_in, n_out, W = None, b = None, 
-            activation=None, params = {}, params_number = None):
+            activation=None, params = {}, params_number = None,maxoutsize = 1):
         return HiddenLayer(rng, input, n_in, n_out, W = self.W, b = self.b,
-                activation = activation, params = params, params_number = params_number)
+                activation = activation, params = params, params_number = params_number,maxoutsize=maxoutsize)
 
 

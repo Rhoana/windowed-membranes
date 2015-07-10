@@ -1,0 +1,10 @@
+Classifier: membrane
+Network size: fully_con
+Number of epochs: 18
+Prediction window size 64,24
+Stride length: 24
+Penalty factor: 0.0
+Layers_3D: 1
+Number of training samples: 180000
+Samples per training image: 2000
+Number of test files: 10
