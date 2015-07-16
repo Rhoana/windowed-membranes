@@ -169,16 +169,19 @@ def evaluate(pred,ground_truth,eval_window_size,classifier):
         pixel_error = np.mean(np.abs(pred-ground_truth))
 
         # Calculate window-wise error
-        windowed_error = 0
-        for n in xrange(pred.shape[0]):
-            pred_conv         = signal.convolve2d(pred[n,0],eval_window,mode="valid")/float(eval_window_size**2)
-            ground_truth_conv = signal.convolve2d(ground_truth[n,0],eval_window,mode="valid")/float(eval_window_size**2)
-            pred_conv          = pred_conv[::eval_window_size,::eval_window_size]
-            ground_truth_conv  = ground_truth_conv[::eval_window_size,::eval_window_size]
+        try:
+            windowed_error = 0
+            for n in xrange(pred.shape[0]):
+                pred_conv         = signal.convolve2d(pred[n,0],eval_window,mode="valid")/float(eval_window_size**2)
+                ground_truth_conv = signal.convolve2d(ground_truth[n,0],eval_window,mode="valid")/float(eval_window_size**2)
+                pred_conv          = pred_conv[::eval_window_size,::eval_window_size]
+                ground_truth_conv  = ground_truth_conv[::eval_window_size,::eval_window_size]
 
-            windowed_error += np.mean(np.abs(pred_conv-ground_truth_conv))
+                windowed_error += np.mean(np.abs(pred_conv-ground_truth_conv))
 
-        windowed_error = windowed_error/float(pred.shape[0])
+            windowed_error = windowed_error/float(pred.shape[0])
+        except:
+            windowed_error = 0.
 
     elif self.classifier=="membrane_synapse":
         # Calculate pixel-wise error

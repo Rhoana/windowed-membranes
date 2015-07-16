@@ -28,7 +28,9 @@ class FullyCon(object):
                 test_version = False, 
                 network = None,
                 h_layers = [1000,1000,1000],
-                maxoutsize=[2,2,2]):
+                maxoutsize=[1,1,1],
+                num_kernels =[10],
+                kernel_sizes=[(5,5)]):
         
         if test_version == False:
             self.srng = theano.tensor.shared_randomstreams.RandomStreams(
@@ -44,24 +46,29 @@ class FullyCon(object):
             in_layer.in_layer(x,y)
             y = in_layer.output_labeled
 
-            self.layer0_input_size  = (batch_size,pred_window_size[0]**2)          
+            self.layer0_input_size  = (batch_size,layers_3D,pred_window_size[0],pred_window_size[0])          
+            self.edge0              = (pred_window_size[0] - kernel_sizes[0][0] + 1)/ 4                    # New edge size
+            self.layer0_output_size = (num_kernels[0]/maxoutsize[0]*self.edge0*self.edge0)                    # Output size
+            assert ((pred_window_size[0] - kernel_sizes[0][0] + 1) % 2) == 0                                # Check pooling size
             
-            # Initialize Layer 0
-            #self.layer0_input = x.reshape(self.layer0_input_size)
-            self.layer0_input = in_layer.output.reshape(self.layer0_input_size)
+            self.layer0_input = in_layer.output
+            
+            # Initialize Layer 2
+            self.layer0 = PoolLayer(rng,
+                                        input= f.dropout(self.layer0_input,p=0.),
+                                        image_shape=self.layer0_input_size,
+                                        subsample= (4,4),
+                                        filter_shape=(num_kernels[0], 1) + kernel_sizes[0],
+                                        poolsize=(1, 1),
+                                        maxoutsize = maxoutsize[0],
+                                        params = params,
+                                        params_number = 0)
 
-            self.layer0 = HiddenLayer(rng,
-                                    input      = self.layer0_input,
-                                    n_in       = pred_window_size[0]**2,
-                                    n_out      = h_layers[0],
-                                    activation = f.rectify,
-                                    params = params,
-                                    params_number = 0,
-                                    maxoutsize=maxoutsize[0])
+            self.layer1_input = self.layer0.output.flatten(2)
                                     
             self.layer1 = HiddenLayer(rng,
-                                    input      = f.dropout(self.layer0.output,p=0.2),
-                                    n_in       = h_layers[0]/maxoutsize[0],
+                                    input      = f.dropout(self.layer1_input,p=0.2),
+                                    n_in       = self.layer0_output_size,
                                     n_out      = h_layers[1],
                                     activation = f.rectify,
                                     params = params,
@@ -105,24 +112,29 @@ class FullyCon(object):
             self.srng = theano.tensor.shared_randomstreams.RandomStreams(
                                 rng.randint(999999))
 
-            self.layer0_input_size  = (batch_size,pred_window_size[0]**2)          
+            self.layer0_input_size  = (batch_size,layers_3D,pred_window_size[0],pred_window_size[0])   
+            self.edge0              = (pred_window_size[0] - kernel_sizes[0][0] + 1)/ 4                     # New edge size
+            self.layer0_output_size = num_kernels[0]/maxoutsize[0]*self.edge0*self.edge0                   # Output size
+            assert ((pred_window_size[0] - kernel_sizes[0][0] + 1) % 2) == 0                                # Check pooling size
             
             # Initialize Layer 0
             self.layer0_input = x.reshape(self.layer0_input_size)
 
-
             self.layer0 = network.layer0.TestVersion(rng,
-                                    input      = self.layer0_input,
-                                    n_in       = pred_window_size[0]**2,
-                                    n_out      = h_layers[0],
-                                    activation = f.rectify,
-                                    params = params,
-                                    params_number = 0,
-                                    maxoutsize=maxoutsize[0])
+                                        input=self.layer0_input,
+                                        image_shape=self.layer0_input_size,
+                                        subsample= (4,4),
+                                        filter_shape=(num_kernels[0], layers_3D) + kernel_sizes[0],
+                                        poolsize=(1, 1),
+                                        maxoutsize = maxoutsize[0],
+                                        params = params,
+                                        params_number = 0)
+                                        
+            self.layer1_input = self.layer0.output.flatten(2)
                                     
             self.layer1 = network.layer1.TestVersion(rng,
-                                    input      = self.layer0.output,
-                                    n_in       = h_layers[0]/maxoutsize[0],
+                                    input      = self.layer1_input,
+                                    n_in       = self.layer0_output_size,
                                     n_out      = h_layers[1],
                                     activation = f.rectify,
                                     params = params,
