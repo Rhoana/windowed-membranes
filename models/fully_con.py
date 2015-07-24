@@ -67,7 +67,7 @@ class FullyCon(object):
             self.layer1_input = self.layer0.output.flatten(2)
                                     
             self.layer1 = HiddenLayer(rng,
-                                    input      = f.dropout(self.layer1_input,p=0.2),
+                                    input      = f.dropout(self.layer1_input,p=0.0),
                                     n_in       = self.layer0_output_size,
                                     n_out      = h_layers[1],
                                     activation = f.rectify,
@@ -76,7 +76,7 @@ class FullyCon(object):
                                     maxoutsize=maxoutsize[1])
             
             self.layer2 = HiddenLayer(rng,
-                                    input      = f.dropout(self.layer1.output,p=0.2),
+                                    input      = f.dropout(self.layer1.output,p=0.0),
                                     n_in       = h_layers[1]/maxoutsize[1],
                                     n_out      = h_layers[2],
                                     activation = f.rectify,
